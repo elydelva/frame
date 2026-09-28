@@ -214,7 +214,9 @@ not performed automatically.
 
 ## The spec
 
-frame is fully documented in the [Founding Paper](./docs/founding-paper.md). Every design decision is recorded there.
+The [Founding Paper](./docs/founding-paper.md) is the original ADRKit vision
+document. For the current package map, see [Architecture](./docs/archi.md); the
+README describes the commands and behavior available in the released CLI.
 
 ---
 

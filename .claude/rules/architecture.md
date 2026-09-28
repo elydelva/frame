@@ -12,10 +12,11 @@ packages/
 ├── fs/       @frame/fs     — IRealmRepository impl (YAML frontmatter via gray-matter)
 ├── git/      @frame/git    — IGitAdapter impl (git staging via Bun.spawn)
 ├── lint/     @frame/lint   — realm integrity engine (LintEngine, core-only, pure)
-├── tui/      @frame/tui    — terminal UI via React/Ink (stub in v0.1)
-├── sync/     @frame/sync   — Linear/GitHub adapters (stub in v0.1)
 └── frame/  frame         — CLI entry point `frame` + dependency injection
 ```
+
+The workspace currently has five implemented packages. There is no TUI or
+external synchronization package; see `docs/archi.md` for the current map.
 
 ## Core domain
 

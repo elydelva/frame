@@ -50,13 +50,15 @@
 
 **Files:**
 - Modify: `docs/archi.md`
+- Modify: `.claude/rules/architecture.md`
+- Modify: `README.md` (point the design-history link at current architecture guidance)
 
 **Interface:** documentation only; use actual exports and current package manifests as the source of truth.
 
-- [ ] Replace old ADRKit/adframe names, nonexistent ports/entities/commands, and speculative implementations with the current Frame package map and dependency flow.
-- [ ] Mark future integrations as future scope and link to the relevant product-scope document.
-- [ ] Verify package names and documented commands against source/manifests, then run `git diff --check`.
-- [ ] Commit as `docs: align architecture guide with current source`.
+- [x] Replace old ADRKit/adframe names, nonexistent ports/entities/commands, and speculative implementations with the current Frame package map and dependency flow.
+- [x] Mark future integrations as future scope and link to current architecture guidance.
+- [x] Verify package names and documented behavior against source/manifests, then run `git diff --check`.
+- [x] Commit as `docs: align architecture guide with current source`.
 
 ## Execution Notes
 
