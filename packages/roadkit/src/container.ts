@@ -20,6 +20,7 @@ import {
 } from "@roadkit/core";
 import { FsRealmRepository, readRealmConfig } from "@roadkit/fs";
 import { GitAdapter } from "@roadkit/git";
+import { assertRealmCompatible } from "./format-compatibility.js";
 
 export interface Container {
   realmRoot: string;
@@ -44,6 +45,8 @@ export interface Container {
 }
 
 export async function createContainer(realmRoot: string): Promise<Container> {
+  await assertRealmCompatible(realmRoot);
+
   // Git runs in the realm root so staging works when ROADKIT_ROOT points
   // outside the current working directory. Staging is performed by the
   // repository (best-effort) using absolute, realm-rooted paths; the use-cases

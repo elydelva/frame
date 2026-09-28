@@ -14,6 +14,7 @@ import { runIssueRemove } from "./commands/issue/rm.js";
 import { runIssueShow } from "./commands/issue/show.js";
 import { runIssueStart } from "./commands/issue/start.js";
 import { runIssueStatus } from "./commands/issue/status.js";
+import { setJsonMode } from "./commands/json-mode.js";
 import { runLint } from "./commands/lint.js";
 import { runMilestoneList } from "./commands/milestone/list.js";
 import { runMilestoneNew } from "./commands/milestone/new.js";
@@ -46,6 +47,11 @@ function withActor(command: Command): Command {
 
 export function buildCLI(): Command {
   const program = new Command();
+
+  setJsonMode(false);
+  program.hook("preAction", (_thisCommand, actionCommand) => {
+    setJsonMode(actionCommand.opts().json === true);
+  });
 
   program
     .name("rkit")

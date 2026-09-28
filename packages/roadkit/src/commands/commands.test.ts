@@ -144,6 +144,23 @@ describe("roadkit CLI commands", () => {
     expect(await fs.readFile(templatePath, "utf-8")).toBe("custom template\n");
   });
 
+  it("init rejects an unsupported realm format before creating other files", async () => {
+    const roadkitDir = path.join(tempDir, ROADKIT_DIR);
+    await fs.mkdir(roadkitDir, { recursive: true });
+    await fs.writeFile(
+      path.join(roadkitDir, REALM_MANIFEST_FILE),
+      '{"formatVersion":2}\n',
+      "utf-8"
+    );
+
+    await expect(runInit(tempDir)).rejects.toMatchObject({
+      code: "UNSUPPORTED_REALM_FORMAT",
+      detectedVersion: 2,
+    });
+    expect(await fs.readdir(roadkitDir)).toEqual([REALM_MANIFEST_FILE]);
+    await expect(fs.access(path.join(tempDir, "roadfig.yml"))).rejects.toThrow();
+  });
+
   it("installs a pre-commit hook in a git repo without clobbering an existing one", async () => {
     // Fresh git repo: hook is installed.
     await fs.mkdir(path.join(tempDir, ".git", "hooks"), { recursive: true });
