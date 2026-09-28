@@ -233,7 +233,7 @@ describe("runIssueWorktree", () => {
 
     await expect(
       runIssueWorktree(container, issue.id.toString(), { actor: "agent:test" })
-    ).rejects.toThrow("Invalid transition");
+    ).rejects.toThrow("worktree was removed; claim ISSUE-0001 was not released");
     const survivingClaim = await container.claims?.get(issue.id.toString());
     expect(survivingClaim?.claimId).toBe(replacementId);
   });

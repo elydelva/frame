@@ -105,16 +105,21 @@ export async function runIssueWorktree(
       }
     }
     if (created) {
+      let removed = false;
       try {
         if (await container.worktrees.isClean(targetPath)) {
           await container.worktrees.remove(targetPath);
+          removed = true;
           await container.claims.release(idRaw, claim.claimId);
         } else {
           throw new Error("worktree contains changes");
         }
       } catch (cleanupError) {
+        const recovery = removed
+          ? `worktree was removed; claim ${idRaw} was not released`
+          : `claim ${idRaw} and worktree ${targetPath} were preserved`;
         throw new Error(
-          `${message(error)}; recovery required: claim ${idRaw} and worktree ${targetPath} were preserved (${message(cleanupError)})`
+          `${message(error)}; recovery required: ${recovery} (${message(cleanupError)})`
         );
       }
     } else {
