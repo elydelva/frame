@@ -57,8 +57,8 @@
 
 **Interface:** the shared module exports a coded `CliError`, `reportCliError(error, jsonMode)`, and `exitCli(code): never`.
 
-- [ ] Implement common error-code/message mapping and stderr rendering, preserving current human and JSON output.
-- [ ] Route `fail()` and the entry-point rejection handler through that reporter and exit helper.
-- [ ] Route lint's nonzero status through the exit helper only, preserving its stdout report.
-- [ ] Verify with package build/typecheck, Biome lint/format, and source search showing `process.exit` only in the shared helper.
-- [ ] Commit as `refactor(cli): centralize error reporting and exit`.
+- [x] Implement common error-code/message mapping and stderr rendering, preserving current human and JSON output.
+- [x] Route `fail()` and the entry-point rejection handler through that reporter and exit helper.
+- [x] Route lint's nonzero status through the exit helper only, preserving its stdout report.
+- [x] Verify with package build/typecheck, Biome lint/format, and source search showing `process.exit` only in the shared helper.
+- [x] Commit as `refactor(cli): centralize error reporting and exit`.

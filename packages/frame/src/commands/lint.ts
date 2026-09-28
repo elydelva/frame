@@ -1,6 +1,7 @@
 import { scanRealmRaw } from "@frame/fs";
 import { LintEngine, type LintFinding } from "@frame/lint";
 import type { Container } from "../container.js";
+import { exitCli } from "./cli-errors.js";
 import { setJsonMode } from "./json-mode.js";
 import { getFormatter } from "./output.js";
 
@@ -36,5 +37,5 @@ export async function runLint(container: Container, opts: LintOptions): Promise<
   });
 
   // Errors fail the command (exit 1) so a pre-commit hook can block the commit.
-  if (report.errorCount > 0) process.exit(1);
+  if (report.errorCount > 0) exitCli(1);
 }

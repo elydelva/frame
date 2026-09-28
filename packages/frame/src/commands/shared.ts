@@ -8,7 +8,8 @@ import type {
   Spec,
   Trace,
 } from "@frame/core";
-import { formatJsonError, isJsonMode } from "./json-mode.js";
+import { CliError, exitCli, reportCliError } from "./cli-errors.js";
+import { isJsonMode } from "./json-mode.js";
 
 export { formatEstimate } from "@frame/core";
 
@@ -57,14 +58,10 @@ export function parseList(raw: string | undefined): string[] {
     .filter((s) => s.length > 0);
 }
 
-/** Print an error to stderr and exit with code 1. */
+/** Report a validation error through the CLI's common error path. */
 export function fail(message: string): never {
-  if (isJsonMode()) {
-    console.error(formatJsonError("ValidationError", message));
-  } else {
-    console.error(`Error: ${message}`);
-  }
-  process.exit(1);
+  reportCliError(new CliError("ValidationError", message), isJsonMode());
+  exitCli(1);
 }
 
 export function serializeProject(p: Project): Record<string, unknown> {
