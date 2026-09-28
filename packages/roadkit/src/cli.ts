@@ -10,6 +10,7 @@ import { runIssueComplete } from "./commands/issue/complete.js";
 import { runIssueEdit } from "./commands/issue/edit.js";
 import { runIssueGateAdd, runIssueGateRemove } from "./commands/issue/gate.js";
 import { runIssueList } from "./commands/issue/list.js";
+import { runIssueRelease } from "./commands/issue/release.js";
 import { runIssueRemove } from "./commands/issue/rm.js";
 import { runIssueShow } from "./commands/issue/show.js";
 import { runIssueStart } from "./commands/issue/start.js";
@@ -28,6 +29,7 @@ import { runSpecList } from "./commands/spec/list.js";
 import { runSpecNew } from "./commands/spec/new.js";
 import { runSpecShow } from "./commands/spec/show.js";
 import { runSpecStatus } from "./commands/spec/status.js";
+import { runWorktreeList } from "./commands/worktree.js";
 import { createContainer } from "./container.js";
 
 // Kept in sync with package.json "version".
@@ -259,6 +261,14 @@ export function buildCLI(): Command {
 
   withActor(
     issue
+      .command("release <issueId>")
+      .description("Release a local issue claim without removing its worktree")
+  ).action(async (issueId: string, opts: Parameters<typeof runIssueRelease>[2]) => {
+    await runIssueRelease(await createContainer(getRealmRoot()), issueId, opts);
+  });
+
+  withActor(
+    issue
       .command("edit <issueId>")
       .description("Edit issue fields (clear nullable fields with --no-<field>)")
       .option("--title <title>", "New title (renames the file)")
@@ -398,6 +408,15 @@ export function buildCLI(): Command {
     .option("--json", "Machine-readable output")
     .action(async (opts: { json?: boolean }) => {
       await runNext(await createContainer(getRealmRoot()), opts);
+    });
+
+  program
+    .command("worktree")
+    .description("Inspect Roadkit managed worktrees")
+    .command("list")
+    .option("--json", "Machine-readable output")
+    .action(async (opts: { json?: boolean }) => {
+      await runWorktreeList(await createContainer(getRealmRoot()), opts);
     });
 
   program
