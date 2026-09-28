@@ -14,6 +14,7 @@ import { runIssueRemove } from "./commands/issue/rm.js";
 import { runIssueShow } from "./commands/issue/show.js";
 import { runIssueStart } from "./commands/issue/start.js";
 import { runIssueStatus } from "./commands/issue/status.js";
+import { runIssueWorktree } from "./commands/issue/worktree.js";
 import { setJsonMode } from "./commands/json-mode.js";
 import { runLint } from "./commands/lint.js";
 import { runMilestoneList } from "./commands/milestone/list.js";
@@ -225,6 +226,21 @@ export function buildCLI(): Command {
         await runIssueStart(await createContainer(getRealmRoot()), issueId, opts);
       }
     );
+
+  issue
+    .command("worktree <issueId>")
+    .description("Claim an issue and start it in a new Git worktree")
+    .option("--assignee <name>", "Issue assignee (defaults to actor)")
+    .option("--branch <name>", "Worktree branch")
+    .option("--path <path>", "Worktree path")
+    .option("--base <ref>", "Base commit or ref (defaults to current HEAD)")
+    .option("--json", "Machine-readable output")
+    .option("--actor <name>", "Acting actor (overrides env)")
+    .option("--actor-type <type>", "Actor type: human|agent")
+    .option("--message <text>", "Trace note explaining the change")
+    .action(async (issueId: string, opts: Parameters<typeof runIssueWorktree>[2]) => {
+      await runIssueWorktree(await createContainer(getRealmRoot()), issueId, opts);
+    });
 
   issue
     .command("complete <issueId>")

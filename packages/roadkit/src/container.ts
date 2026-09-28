@@ -20,10 +20,15 @@ import {
 } from "@roadkit/core";
 import { FsRealmRepository, readRealmConfig } from "@roadkit/fs";
 import { GitAdapter } from "@roadkit/git";
+import { GitWorktreeAdapter } from "@roadkit/git";
 import { assertRealmCompatible } from "./format-compatibility.js";
+import { WorktreeClaimStore } from "./worktrees/claim-store.js";
 
 export interface Container {
   realmRoot: string;
+  repoRoot: string;
+  worktrees: GitWorktreeAdapter | null;
+  claims: WorktreeClaimStore | null;
   config: RealmConfig;
   repo: IRealmRepository;
   createProject: CreateProjectUseCase;
@@ -52,11 +57,24 @@ export async function createContainer(realmRoot: string): Promise<Container> {
   // repository (best-effort) using absolute, realm-rooted paths; the use-cases
   // are deliberately git-less to avoid double-staging.
   const git = new GitAdapter(realmRoot);
+  const invocationRoot = process.env.ROADKIT_ROOT ? process.cwd() : realmRoot;
+  const worktrees = new GitWorktreeAdapter(invocationRoot);
+  let repoRoot = invocationRoot;
+  let claims: WorktreeClaimStore | null = null;
+  try {
+    repoRoot = await worktrees.getTopLevel();
+    claims = new WorktreeClaimStore(await worktrees.getCommonDir());
+  } catch {
+    // Roadkit realms may intentionally live outside a Git repository.
+  }
   const repo = new FsRealmRepository(realmRoot, git);
   const config = await readRealmConfig(realmRoot);
 
   return {
     realmRoot,
+    repoRoot,
+    worktrees: claims ? worktrees : null,
+    claims,
     config,
     repo,
     createProject: new CreateProjectUseCase(repo),

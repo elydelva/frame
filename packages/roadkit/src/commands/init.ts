@@ -12,6 +12,7 @@ import {
   writeRealmConfig,
   writeRealmFormat,
 } from "@roadkit/fs";
+import { GitCommandError, GitWorktreeAdapter } from "@roadkit/git";
 
 const PROJECT_TEMPLATE = `---
 id: "{{id}}"
@@ -164,6 +165,7 @@ export async function runInit(realmRoot: string): Promise<void> {
   // Validate before creating or updating any realm files. A missing manifest is
   // legacy format 1 and is materialized below; an incompatible one fails closed.
   await readRealmFormat(realmRoot);
+  await addWorktreeExclude(realmRoot);
 
   const roadkitDir = path.join(realmRoot, ROADKIT_DIR);
   const templatesDir = path.join(roadkitDir, TEMPLATES_DIR);
@@ -213,6 +215,29 @@ export async function runInit(realmRoot: string): Promise<void> {
   console.log('Next: rkit project new --title "My first project"');
 }
 
+async function addWorktreeExclude(realmRoot: string): Promise<void> {
+  try {
+    const commonDir = await new GitWorktreeAdapter(realmRoot).getCommonDir();
+    const infoDir = path.join(commonDir, "info");
+    const excludeFile = path.join(infoDir, "exclude");
+    await fs.mkdir(infoDir, { recursive: true });
+    const contents = await fs
+      .readFile(excludeFile, "utf-8")
+      .catch((error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") return "";
+        throw error;
+      });
+    if (contents.split(/\r?\n/).some((line) => line.trim() === ".worktrees/")) return;
+    await fs.writeFile(
+      excludeFile,
+      `${contents}${contents && !contents.endsWith("\n") ? "\n" : ""}.worktrees/\n`
+    );
+  } catch (error) {
+    if (error instanceof GitCommandError) return;
+    throw error;
+  }
+}
+
 /** Scaffold the agent guide at the realm root, never overwriting an existing one. */
 async function writeAgentsGuide(realmRoot: string): Promise<void> {
   const file = path.join(realmRoot, "AGENTS.md");
@@ -229,8 +254,13 @@ async function writeAgentsGuide(realmRoot: string): Promise<void> {
  * repo with no existing hook — never clobber a hook the user already wrote.
  */
 async function installPreCommitHook(realmRoot: string): Promise<void> {
-  const hooksDir = path.join(realmRoot, ".git", "hooks");
-  if (!(await exists(path.join(realmRoot, ".git")))) return;
+  let hooksDir: string;
+  try {
+    hooksDir = path.join(await new GitWorktreeAdapter(realmRoot).getCommonDir(), "hooks");
+  } catch (error) {
+    if (error instanceof GitCommandError) return;
+    throw error;
+  }
 
   const hookFile = path.join(hooksDir, "pre-commit");
   if (await exists(hookFile)) {

@@ -82,6 +82,42 @@ export class GitWorktreeAdapter {
     return path.resolve(this.cwd, stdout.trim());
   }
 
+  async getTopLevel(): Promise<string> {
+    const { stdout } = await runGit(["rev-parse", "--show-toplevel"], this.cwd);
+    return path.resolve(this.cwd, stdout.trim());
+  }
+
+  async getHead(): Promise<string> {
+    const { stdout } = await runGit(["rev-parse", "HEAD"], this.cwd);
+    return stdout.trim();
+  }
+
+  async branchExists(branch: string): Promise<boolean> {
+    const { stdout } = await runGit(
+      ["branch", "--list", "--format=%(refname:short)", branch],
+      this.cwd
+    );
+    return stdout.split("\n").some((line) => line === branch);
+  }
+
+  async isIgnored(targetPath: string): Promise<boolean> {
+    try {
+      await runGit(["check-ignore", "-q", "--", targetPath], this.cwd);
+      return true;
+    } catch (error) {
+      if (error instanceof GitCommandError && error.exitCode === 1) return false;
+      throw error;
+    }
+  }
+
+  async isClean(worktreePath: string): Promise<boolean> {
+    const { stdout } = await runGit(
+      ["status", "--porcelain", "--untracked-files=all"],
+      worktreePath
+    );
+    return stdout.length === 0;
+  }
+
   async list(): Promise<GitWorktree[]> {
     const { stdout } = await runGit(["worktree", "list", "--porcelain", "-z"], this.cwd);
     return parseWorktrees(stdout);

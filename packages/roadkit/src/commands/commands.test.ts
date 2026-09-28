@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -48,6 +49,9 @@ function testContainer(realmRoot: string): Container {
   const repo = new FsRealmRepository(realmRoot);
   return {
     realmRoot,
+    repoRoot: realmRoot,
+    worktrees: null,
+    claims: null,
     config: DEFAULT_CONFIG,
     repo,
     createProject: new CreateProjectUseCase(repo),
@@ -124,6 +128,21 @@ describe("roadkit CLI commands", () => {
     expect(agents).toContain("ROADKIT_ACTOR");
   });
 
+  it("adds the worktree path to the repository-local exclude file once", async () => {
+    const runGit = (...args: string[]) => {
+      const result = spawnSync("git", args, { cwd: tempDir, encoding: "utf8" });
+      if (result.status !== 0) throw new Error(result.stderr);
+    };
+    runGit("init", "-q");
+    await fs.mkdir(path.join(tempDir, ".git", "info"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, ".git", "info", "exclude"), "# existing\ncustom/\n");
+    await runInit(tempDir);
+    await runInit(tempDir);
+    const exclude = await fs.readFile(path.join(tempDir, ".git", "info", "exclude"), "utf8");
+    expect(exclude).toContain("# existing\ncustom/");
+    expect(exclude.match(/^\.worktrees\/$/gm)).toHaveLength(1);
+  });
+
   it("init adds a format manifest to a legacy realm without replacing existing files", async () => {
     const configPath = path.join(tempDir, "roadfig.yml");
     await fs.writeFile(configPath, "version: 1\ncustom: preserve\n", "utf-8");
@@ -163,7 +182,8 @@ describe("roadkit CLI commands", () => {
 
   it("installs a pre-commit hook in a git repo without clobbering an existing one", async () => {
     // Fresh git repo: hook is installed.
-    await fs.mkdir(path.join(tempDir, ".git", "hooks"), { recursive: true });
+    const initialized = spawnSync("git", ["init", "-q"], { cwd: tempDir });
+    if (initialized.status !== 0) throw new Error("git init failed");
     let cap = captureLog();
     await runInit(tempDir);
     cap.restore();
