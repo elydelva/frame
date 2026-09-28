@@ -50,7 +50,8 @@ async function fixture() {
 async function forceStartFailure(
   container: Awaited<ReturnType<typeof createContainer>>,
   issueId: string,
-  dirty: boolean
+  dirty: boolean,
+  afterAdd?: () => Promise<void>
 ) {
   const adapter = container.worktrees;
   if (!adapter) throw new Error("expected Git adapter");
@@ -71,6 +72,7 @@ async function forceStartFailure(
     git(input.path, "add", ".");
     git(input.path, "commit", "-qm", "invalid-start-state");
     if (dirty) await fs.writeFile(path.join(input.path, "recovery-marker"), "preserve");
+    await afterAdd?.();
   };
 }
 
@@ -208,6 +210,32 @@ describe("runIssueWorktree", () => {
         () => false
       )
     ).toBe(false);
+  });
+
+  it("does not release a replacement claim while cleaning up a failed start", async () => {
+    const { container, issue } = await fixture();
+    let replacementId = "";
+    await forceStartFailure(container, issue.id.toString(), false, async () => {
+      const claims = container.claims;
+      if (!claims) throw new Error("expected claim store");
+      const original = await claims.get(issue.id.toString());
+      if (!original) throw new Error("expected original claim");
+      await claims.release(issue.id.toString(), original.claimId);
+      replacementId = (
+        await claims.claim({
+          issueId: issue.id.toString(),
+          actor: "replacement-agent",
+          branch: "issue/replacement",
+          path: "/replacement/worktree",
+        })
+      ).claimId;
+    });
+
+    await expect(
+      runIssueWorktree(container, issue.id.toString(), { actor: "agent:test" })
+    ).rejects.toThrow("Invalid transition");
+    const survivingClaim = await container.claims?.get(issue.id.toString());
+    expect(survivingClaim?.claimId).toBe(replacementId);
   });
 
   it("preserves a dirty worktree and claim when starting fails", async () => {

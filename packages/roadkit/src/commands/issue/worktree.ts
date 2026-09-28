@@ -108,7 +108,7 @@ export async function runIssueWorktree(
       try {
         if (await container.worktrees.isClean(targetPath)) {
           await container.worktrees.remove(targetPath);
-          await container.claims.release(idRaw);
+          await container.claims.release(idRaw, claim.claimId);
         } else {
           throw new Error("worktree contains changes");
         }
@@ -118,7 +118,7 @@ export async function runIssueWorktree(
         );
       }
     } else {
-      await container.claims.release(idRaw);
+      await container.claims.release(idRaw, claim.claimId);
     }
     throw error;
   }
