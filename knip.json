@@ -18,14 +18,9 @@
     "@frame/fs",
     "@frame/git",
     "@frame/lint",
-    "@frame/tui",
-    "@frame/sync",
     "commander",
     "gray-matter",
-    "js-yaml",
-    "ink",
-    "react",
-    "@types/react"
+    "js-yaml"
   ],
   "ignoreExportsUsedInFile": true
 }

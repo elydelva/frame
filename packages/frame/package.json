@@ -28,8 +28,6 @@
     "@frame/fs": "workspace:*",
     "@frame/git": "workspace:*",
     "@frame/lint": "workspace:*",
-    "@frame/tui": "workspace:*",
-    "@frame/sync": "workspace:*",
     "commander": "catalog:"
   },
   "devDependencies": {

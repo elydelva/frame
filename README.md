@@ -148,14 +148,9 @@ frame context --project PROJ-0001
 
 ---
 
-## Syncs with your existing tools
+## Planned integrations
 
-frame lives in git. But if you use Linear or GitHub Issues, it syncs there too — delegating auth entirely to the CLIs you already have authenticated.
-
-```bash
-frame sync linear    # requires: linear CLI authenticated
-frame sync github    # requires: gh auth login
-```
+Frame currently stores project data in Git. Linear and GitHub Issues synchronization are planned; the CLI does not provide sync commands yet.
 
 ---
 

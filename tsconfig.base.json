@@ -21,9 +21,7 @@
       "@frame/core": ["./packages/core/src/index.ts"],
       "@frame/fs": ["./packages/fs/src/index.ts"],
       "@frame/git": ["./packages/git/src/index.ts"],
-      "@frame/lint": ["./packages/lint/src/index.ts"],
-      "@frame/tui": ["./packages/tui/src/index.ts"],
-      "@frame/sync": ["./packages/sync/src/index.ts"]
+      "@frame/lint": ["./packages/lint/src/index.ts"]
     }
   },
   "include": ["packages/*/src"],

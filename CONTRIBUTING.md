@@ -65,8 +65,6 @@ packages/
   fs/       @frame/fs     — filesystem adapter
   git/      @frame/git    — git adapter
   lint/     @frame/lint   — validation engine
-  tui/      @frame/tui    — terminal interface
-  sync/     @frame/sync   — external adapters (Linear, GitHub)
   frame/  frame         — published binary `frame` (entry point + DI)
 docs/       — founding paper, architecture, v0.x scope docs
 ```

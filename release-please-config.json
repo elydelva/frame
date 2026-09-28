@@ -18,15 +18,13 @@
     "packages/fs": { "release-type": "node", "component": "fs" },
     "packages/git": { "release-type": "node", "component": "git" },
     "packages/lint": { "release-type": "node", "component": "lint" },
-    "packages/tui": { "release-type": "node", "component": "tui" },
-    "packages/sync": { "release-type": "node", "component": "sync" },
     "packages/frame": { "release-type": "node", "component": "frame" }
   },
   "plugins": [
     {
       "type": "linked-versions",
       "groupName": "frame",
-      "components": ["core", "fs", "git", "lint", "tui", "sync", "frame"]
+      "components": ["core", "fs", "git", "lint", "frame"]
     }
   ]
 }

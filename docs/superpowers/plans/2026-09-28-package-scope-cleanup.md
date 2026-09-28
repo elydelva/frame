@@ -40,11 +40,11 @@
 
 **Interface:** no runtime interface changes. The workspace contains only implemented packages; future integrations remain documented as future scope.
 
-- [ ] Remove package references from root scripts, CLI dependencies, TS paths, Knip configuration, and dependency catalogs.
-- [ ] Remove the two empty package directories and refresh the lockfile.
-- [ ] Update README/contributor/scope docs so current capability claims match the CLI and workspace.
-- [ ] Verify with `bun run build`, `bun run typecheck`, `bun run lint`, `bunx biome format .`, `bunx knip --reporter compact`, and `rg` for stale package references.
-- [ ] Commit as `refactor(workspace): remove empty sync and tui packages`.
+- [x] Remove package references from root scripts, CLI dependencies, TS paths, Knip configuration, release-please configuration, and dependency catalogs.
+- [x] Remove the two empty package directories and refresh the lockfile.
+- [x] Update README/contributor/scope docs so current capability claims match the CLI and workspace.
+- [x] Verify with `bun run build`, `bun run typecheck`, `bun run lint`, `bunx biome format .`, `bunx knip --reporter compact`, and `rg` for stale package references.
+- [x] Commit as `refactor(workspace): remove empty sync and tui packages`.
 
 ### Task 2: Replace the stale architecture map
 
