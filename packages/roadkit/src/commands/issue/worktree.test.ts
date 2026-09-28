@@ -117,16 +117,25 @@ describe("runIssueWorktree", () => {
   it("honors branch, path, assignee, and base overrides", async () => {
     const { root, container, issue } = await fixture();
     const base = git(root, "rev-parse", "HEAD");
-    const customPath = path.join(container.repoRoot, ".worktrees", "custom-task");
-    const result = await runIssueWorktree(container, issue.id.toString(), {
-      actor: "agent:test",
-      assignee: "ely",
-      branch: "task/custom-task",
-      path: customPath,
-      base,
-    });
+    const customPath = path.join(container.repoRoot, ".worktrees", "custom task");
+    const output: string[] = [];
+    const originalLog = console.log;
+    console.log = (...args: unknown[]) => output.push(args.join(" "));
+    let result: Awaited<ReturnType<typeof runIssueWorktree>>;
+    try {
+      result = await runIssueWorktree(container, issue.id.toString(), {
+        actor: "agent:test",
+        assignee: "ely",
+        branch: "task/custom-task",
+        path: customPath,
+        base,
+      });
+    } finally {
+      console.log = originalLog;
+    }
     expect(result.branch).toBe("task/custom-task");
     expect(result.path).toBe(customPath);
+    expect(output.join("\n")).toContain(`Next: cd '${customPath}'`);
     expect(git(root, "-C", customPath, "rev-parse", "HEAD")).toBe(base);
     const started = await createContainer(customPath);
     expect((await started.repo.findIssue(issue.id))?.assignee).toBe("ely");
@@ -141,6 +150,25 @@ describe("runIssueWorktree", () => {
       })
     ).rejects.toThrow("must be ignored");
     expect(await container.claims?.get(issue.id.toString())).toBeNull();
+  });
+
+  it("cleans up a worktree when Git creates it before reporting add failure", async () => {
+    const { container, issue } = await fixture();
+    const adapter = container.worktrees;
+    if (!adapter) throw new Error("expected Git adapter");
+    const add = adapter.add.bind(adapter);
+    adapter.add = async (input) => {
+      await add(input);
+      throw new Error("simulated post-create Git failure");
+    };
+
+    await expect(
+      runIssueWorktree(container, issue.id.toString(), { actor: "agent:test" })
+    ).rejects.toThrow("simulated post-create Git failure");
+    expect(await container.claims?.get(issue.id.toString())).toBeNull();
+    expect((await adapter.list()).some((tree) => tree.path.endsWith(issue.id.toString()))).toBe(
+      false
+    );
   });
 
   it("releases the claim and removes a clean worktree when starting fails", async () => {

@@ -54,6 +54,7 @@ export async function runIssueWorktree(
   const base = opts.base ?? (await container.worktrees.getHead());
   const claim = await container.claims.claim({ issueId: idRaw, actor, branch, path: targetPath });
   let created = false;
+  let addAttempted = false;
   try {
     if (await exists(targetPath)) throw new Error(`Worktree path already exists: ${targetPath}`);
     if (await container.worktrees.branchExists(branch))
@@ -61,6 +62,7 @@ export async function runIssueWorktree(
     if (!(await container.worktrees.isIgnored(targetPath))) {
       throw new Error(`Worktree path must be ignored by Git: ${targetPath}`);
     }
+    addAttempted = true;
     await container.worktrees.add({ path: targetPath, branch, base });
     created = true;
     const startedContainer = await createContainerAt(targetPath);
@@ -84,11 +86,23 @@ export async function runIssueWorktree(
       human: () => {
         console.log(`✓ Started ${idRaw} in ${branch}`);
         console.log(`  ${targetPath}`);
-        console.log(`  Next: cd ${targetPath}`);
+        console.log(`  Next: cd ${shellQuote(targetPath)}`);
       },
     });
     return result;
   } catch (error) {
+    if (addAttempted && !created) {
+      try {
+        created = (await container.worktrees.list()).some((tree) => tree.path === targetPath);
+        if (!created && (await exists(targetPath))) {
+          throw new Error("Git left an unregistered path");
+        }
+      } catch (inspectionError) {
+        throw new Error(
+          `${message(error)}; recovery required: claim ${idRaw} and path ${targetPath} were preserved (${message(inspectionError)})`
+        );
+      }
+    }
     if (created) {
       try {
         if (await container.worktrees.isClean(targetPath)) {
@@ -107,6 +121,10 @@ export async function runIssueWorktree(
     }
     throw error;
   }
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
 }
 
 function slugify(value: string): string {

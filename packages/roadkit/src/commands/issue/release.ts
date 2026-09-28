@@ -10,7 +10,9 @@ export async function runIssueRelease(
 ): Promise<{ claim: WorktreeClaim; releasedBy: string }> {
   if (!container.claims) throw new Error("Issue claim release requires a Git working tree");
   const { actor } = resolveActor(opts);
-  const claim = await container.claims.release(issueId);
+  const snapshot = await container.claims.get(issueId);
+  if (!snapshot) throw new Error(`No claim exists for ${issueId}`);
+  const claim = await container.claims.release(issueId, snapshot.createdAt);
   const result = { claim, releasedBy: actor };
   getFormatter(opts.json ?? false).emit({
     json: result,

@@ -7,7 +7,10 @@ export interface WorktreeClaim {
   createdAt: string;
 }
 
-export type ClaimStoreErrorCode = "INVALID_CLAIM" | "UNSUPPORTED_CLAIM_PROTOCOL";
+export type ClaimStoreErrorCode =
+  | "INVALID_CLAIM"
+  | "UNSUPPORTED_CLAIM_PROTOCOL"
+  | "CLAIM_LOCK_TIMEOUT";
 
 export interface ClaimStoreErrorInfo {
   code: ClaimStoreErrorCode;

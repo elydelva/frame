@@ -305,6 +305,38 @@ describe("roadkit CLI commands", () => {
     await runIssueList(container, {});
     expect(humanList.lines.join("\n")).toContain(`claimed by agent:worker · ${brief.claim.path}`);
     humanList.restore();
+
+    const commonDir = await container.worktrees?.getCommonDir();
+    if (!commonDir) throw new Error("expected Git common directory");
+    const claimPath = path.join(commonDir, "roadkit", "claims", `${first.id.toString()}.json`);
+    await fs.writeFile(claimPath, '{"protocolVersion":2}\n');
+    const nextWithClaimError = captureLog();
+    await runNext(container, { json: true });
+    const nextError = JSON.parse(nextWithClaimError.lines.join(" ")) as {
+      claimErrors: Array<{ issueId: string }>;
+    };
+    nextWithClaimError.restore();
+    expect(nextError.claimErrors[0]?.issueId).toBe(first.id.toString());
+    const humanNextError = captureLog();
+    await runNext(container, {});
+    expect(humanNextError.lines.join("\n")).toContain(
+      `Claim for ${first.id.toString()} could not be read`
+    );
+    humanNextError.restore();
+    const briefWithClaimError = captureLog();
+    await runBrief(container, { issue: first.id.toString(), json: true });
+    const briefError = JSON.parse(briefWithClaimError.lines.join(" ")) as {
+      claimError: { code: string };
+    };
+    briefWithClaimError.restore();
+    expect(briefError.claimError.code).toBe("UNSUPPORTED_CLAIM_PROTOCOL");
+    const humanBriefError = captureLog();
+    await runBrief(container, { issue: first.id.toString() });
+    expect(humanBriefError.lines.join("\n")).toContain(
+      `Claim for ${first.id.toString()} could not be read`
+    );
+    humanBriefError.restore();
+    expect(await fs.readFile(claimPath, "utf8")).toBe('{"protocolVersion":2}\n');
   });
 
   it("emits machine-readable context and history", async () => {

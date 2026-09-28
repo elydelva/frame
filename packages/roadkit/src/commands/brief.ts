@@ -24,13 +24,15 @@ export async function runBrief(container: Container, opts: BriefOptions): Promis
   if (opts.project) filter.projectId = ProjectId.from(opts.project);
 
   const brief = await container.getBrief.execute({ ...filter, excludedIssueIds });
-  const claim = brief.issue
-    ? (claimEntries.find((entry) => entry.issueId === brief.issue?.id.toString())?.claim ?? null)
-    : null;
+  const claimId = opts.issue ?? brief.issue?.id.toString();
+  const claimEntry = claimId ? claimEntries.find((entry) => entry.issueId === claimId) : undefined;
+  const claim = claimEntry?.claim ?? null;
+  const claimError =
+    claimEntry?.error && claimId ? { issueId: claimId, ...claimEntry.error } : null;
 
   getFormatter(opts.json ?? false).emit({
-    json: { ...serializeBrief(brief), claim },
-    human: () => console.log(renderBrief(container, brief, claim)),
+    json: { ...serializeBrief(brief), claim, claimError },
+    human: () => console.log(renderBrief(container, brief, claim, claimError)),
   });
 }
 
@@ -38,12 +40,17 @@ export async function runBrief(container: Container, opts: BriefOptions): Promis
 function renderBrief(
   container: Container,
   brief: Brief,
-  claim: { actor: string; path: string } | null
+  claim: { actor: string; path: string } | null,
+  claimError: { issueId: string; code: string; message: string } | null
 ): string {
   const lines: string[] = ["# roadkit brief", ""];
 
   if (!brief.issue) {
     lines.push("No focus issue (nothing in progress or eligible).");
+    if (claimError)
+      lines.push(
+        `Claim for ${claimError.issueId} could not be read (${claimError.code}): ${claimError.message}`
+      );
     if (brief.next) {
       lines.push("", `**Next:** ${nextLine(container, brief)}`);
     }
@@ -60,6 +67,10 @@ function renderBrief(
     milestone ? `Milestone: ${milestone.id.toString()} — ${milestone.title}` : ""
   );
   if (claim) lines.push(`Claim: ${claim.actor} · ${claim.path}`);
+  if (claimError)
+    lines.push(
+      `Claim for ${claimError.issueId} could not be read (${claimError.code}): ${claimError.message}`
+    );
 
   if (brief.blockedReason) {
     lines.push("", `> ⚠ Blocked: ${brief.blockedReason}`);

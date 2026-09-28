@@ -98,6 +98,15 @@ describe("WorktreeClaimStore", () => {
     expect((await store.get("ISSUE-0008"))?.issueId).toBe("ISSUE-0008");
   });
 
+  it("does not release a replacement claim using a stale claim snapshot", async () => {
+    const original = await store.claim(input("ISSUE-0009", "agent:old"));
+    await store.release("ISSUE-0009");
+    const replacement = await store.claim(input("ISSUE-0009", "agent:new"));
+
+    await expect(store.release("ISSUE-0009", original.createdAt)).rejects.toThrow("Claim changed");
+    expect(await store.get("ISSUE-0009")).toEqual(replacement);
+  });
+
   function input(issueId: string, actor = "agent:test") {
     return {
       issueId,

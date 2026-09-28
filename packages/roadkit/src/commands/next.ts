@@ -13,6 +13,9 @@ export async function runNext(container: Container, opts: NextOptions): Promise<
   const result = await container.getNext.execute({
     excludedIssueIds: new Set(claimEntries.map((entry) => entry.issueId)),
   });
+  const claimErrors = claimEntries.flatMap((entry) =>
+    entry.error ? [{ issueId: entry.issueId, ...entry.error }] : []
+  );
 
   getFormatter(opts.json ?? false).emit({
     json: result
@@ -20,20 +23,28 @@ export async function runNext(container: Container, opts: NextOptions): Promise<
           issue: serializeIssue(result.issue),
           project: serializeProject(result.project),
           milestone: result.milestone ? serializeMilestone(result.milestone) : null,
+          ...(claimErrors.length > 0 ? { claimErrors } : {}),
         }
-      : null,
+      : claimErrors.length > 0
+        ? { issue: null, project: null, milestone: null, claimErrors }
+        : null,
     human: () => {
       if (!result) {
         console.log("No eligible issue.");
-        return;
+      } else {
+        const { issue, project, milestone } = result;
+        const scope = milestone
+          ? `${project.id.toString()} / ${milestone.id.toString()}`
+          : project.id.toString();
+        const est = formatEstimate(container.config, issue.estimate);
+        const tag = est ? `${issue.priority} · ${est}` : issue.priority;
+        console.log(`→ ${issue.id.toString()}  ${issue.title}  [${tag}]  (${scope})`);
       }
-      const { issue, project, milestone } = result;
-      const scope = milestone
-        ? `${project.id.toString()} / ${milestone.id.toString()}`
-        : project.id.toString();
-      const est = formatEstimate(container.config, issue.estimate);
-      const tag = est ? `${issue.priority} · ${est}` : issue.priority;
-      console.log(`→ ${issue.id.toString()}  ${issue.title}  [${tag}]  (${scope})`);
+      for (const error of claimErrors) {
+        console.log(
+          `Claim for ${error.issueId} could not be read (${error.code}): ${error.message}`
+        );
+      }
     },
   });
 }

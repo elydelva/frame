@@ -10,6 +10,7 @@ import type {
 
 const CLAIM_PROTOCOL_VERSION = 1;
 const ISSUE_ID_PATTERN = /^ISSUE-\d{4}$/;
+const CLAIM_LOCK_TIMEOUT_MS = 10_000;
 
 export class ClaimStoreError extends Error implements ClaimStoreErrorInfo {
   constructor(
@@ -81,42 +82,130 @@ export class WorktreeClaimStore {
   async claim(input: Omit<WorktreeClaim, "protocolVersion" | "createdAt">): Promise<WorktreeClaim> {
     const filePath = this.claimPath(input.issueId);
     await fs.mkdir(this.claimsDir, { recursive: true });
-    const claim: WorktreeClaim = {
-      protocolVersion: CLAIM_PROTOCOL_VERSION,
-      ...input,
-      createdAt: new Date().toISOString(),
-    };
-    const tempPath = path.join(this.claimsDir, `.${input.issueId}.${randomUUID()}.tmp`);
+    return this.withIssueLock(input.issueId, async () => {
+      const existing = await this.get(input.issueId);
+      if (existing) throw new IssueAlreadyClaimedError(existing);
+      const claim: WorktreeClaim = {
+        protocolVersion: CLAIM_PROTOCOL_VERSION,
+        ...input,
+        createdAt: new Date().toISOString(),
+      };
+      const tempPath = path.join(this.claimsDir, `.${input.issueId}.${randomUUID()}.tmp`);
+
+      try {
+        await fs.writeFile(tempPath, `${JSON.stringify(claim, null, 2)}\n`, "utf-8");
+        // Linking publishes a fully-written record atomically and fails if a
+        // concurrent process has already claimed this issue.
+        await fs.link(tempPath, filePath);
+        return claim;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        const existing = await this.get(input.issueId);
+        if (!existing) {
+          throw new ClaimStoreError(
+            "INVALID_CLAIM",
+            filePath,
+            "Claim file appeared during acquisition but could not be read"
+          );
+        }
+        throw new IssueAlreadyClaimedError(existing);
+      } finally {
+        await fs.rm(tempPath, { force: true });
+      }
+    });
+  }
+
+  async release(issueId: string, expectedCreatedAt?: string): Promise<WorktreeClaim> {
+    const filePath = this.claimPath(issueId);
+    await fs.mkdir(this.claimsDir, { recursive: true });
+    return this.withIssueLock(issueId, async () => {
+      const claim = await this.get(issueId);
+      if (!claim) {
+        throw new ClaimStoreError("INVALID_CLAIM", filePath, "No claim exists");
+      }
+      if (expectedCreatedAt && claim.createdAt !== expectedCreatedAt) {
+        throw new ClaimStoreError("INVALID_CLAIM", filePath, "Claim changed while releasing");
+      }
+      await fs.rm(filePath);
+      return claim;
+    });
+  }
+
+  private async withIssueLock<T>(issueId: string, operation: () => Promise<T>): Promise<T> {
+    const lockPath = path.join(this.claimsDir, `.${issueId}.lock`);
+    const deadline = Date.now() + CLAIM_LOCK_TIMEOUT_MS;
+    while (true) {
+      try {
+        await fs.mkdir(lockPath);
+        try {
+          await fs.writeFile(
+            path.join(lockPath, "owner.json"),
+            JSON.stringify({ pid: process.pid })
+          );
+        } catch (error) {
+          await fs.rm(lockPath, { recursive: true, force: true });
+          throw error;
+        }
+        break;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+        if (await this.reapDeadLock(lockPath)) continue;
+        if (Date.now() >= deadline) {
+          throw new ClaimStoreError(
+            "CLAIM_LOCK_TIMEOUT",
+            lockPath,
+            "Timed out waiting for issue claim lock"
+          );
+        }
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    }
 
     try {
-      await fs.writeFile(tempPath, `${JSON.stringify(claim, null, 2)}\n`, "utf-8");
-      // Linking publishes a fully-written record atomically and fails if a
-      // concurrent process has already claimed this issue.
-      await fs.link(tempPath, filePath);
-      return claim;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-      const existing = await this.get(input.issueId);
-      if (!existing) {
-        throw new ClaimStoreError(
-          "INVALID_CLAIM",
-          filePath,
-          "Claim file appeared during acquisition but could not be read"
-        );
-      }
-      throw new IssueAlreadyClaimedError(existing);
+      return await operation();
     } finally {
-      await fs.rm(tempPath, { force: true });
+      await fs.rm(lockPath, { recursive: true, force: true });
     }
   }
 
-  async release(issueId: string): Promise<WorktreeClaim> {
-    const claim = await this.get(issueId);
-    if (!claim) {
-      throw new ClaimStoreError("INVALID_CLAIM", this.claimPath(issueId), "No claim exists");
+  private async reapDeadLock(lockPath: string): Promise<boolean> {
+    let pid: unknown;
+    try {
+      const owner = JSON.parse(await fs.readFile(path.join(lockPath, "owner.json"), "utf-8")) as {
+        pid?: unknown;
+      };
+      pid = owner.pid;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") return false;
+      try {
+        const lockStat = await fs.stat(lockPath);
+        const ownerAgeMs = Date.now() - lockStat.mtimeMs;
+        if (ownerAgeMs < 2_000) return false;
+        return this.moveStaleLock(lockPath);
+      } catch {
+        return true;
+      }
     }
-    await fs.rm(this.claimPath(issueId));
-    return claim;
+    if (typeof pid !== "number" || !Number.isInteger(pid) || pid < 1) return false;
+    try {
+      process.kill(pid, 0);
+      return false;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ESRCH") return false;
+    }
+    return this.moveStaleLock(lockPath);
+  }
+
+  private async moveStaleLock(lockPath: string): Promise<boolean> {
+    const stalePath = `${lockPath}.stale-${randomUUID()}`;
+    try {
+      await fs.rename(lockPath, stalePath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return true;
+      return false;
+    }
+    await fs.rm(stalePath, { recursive: true, force: true });
+    return true;
   }
 
   private claimPath(issueId: string): string {
