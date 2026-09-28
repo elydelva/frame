@@ -43,6 +43,7 @@ rkit next
 rkit issue worktree ISSUE-0041
 # → prints the absolute path and `cd` command
 cd /path/printed/by/rkit
+export ROADKIT_ROOT="$PWD"
 rkit brief --issue ISSUE-0041
 # ...implement and validate...
 rkit issue complete ISSUE-0041 --message "Token rotation implemented"

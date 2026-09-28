@@ -86,7 +86,8 @@ export async function runIssueWorktree(
       human: () => {
         console.log(`✓ Started ${idRaw} in ${branch}`);
         console.log(`  ${targetPath}`);
-        console.log(`  Next: cd ${shellQuote(targetPath)}`);
+        const quotedPath = shellQuote(targetPath);
+        console.log(`  Next: cd ${quotedPath} && export ROADKIT_ROOT=${quotedPath}`);
       },
     });
     return result;

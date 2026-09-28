@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
+import { buildCLI } from "../../cli.js";
 import { createContainer } from "../../container.js";
 import { runIssueWorktree } from "./worktree.js";
 
@@ -97,6 +98,27 @@ describe("runIssueWorktree", () => {
     expect(updated?.assignee).toBe("agent:test");
     expect(updated?.branch).toBe(result.branch);
     expect(git(root, "-C", result.path, "diff", "--cached", "--name-only")).toContain("/issues/");
+
+    const previousRoot = process.env.ROADKIT_ROOT;
+    const cliOutput: string[] = [];
+    const originalLog = console.log;
+    process.env.ROADKIT_ROOT = result.path;
+    console.log = (...args: unknown[]) => cliOutput.push(args.join(" "));
+    try {
+      await buildCLI().parseAsync([
+        "node",
+        "rkit",
+        "brief",
+        "--issue",
+        issue.id.toString(),
+        "--json",
+      ]);
+    } finally {
+      console.log = originalLog;
+      if (previousRoot === undefined) process.env.ROADKIT_ROOT = undefined;
+      else process.env.ROADKIT_ROOT = previousRoot;
+    }
+    expect(JSON.parse(cliOutput.join(" ")).issue.status).toBe("in-progress");
   });
 
   it("rejects an issue that is already in progress before creating a claim", async () => {
@@ -135,7 +157,9 @@ describe("runIssueWorktree", () => {
     }
     expect(result.branch).toBe("task/custom-task");
     expect(result.path).toBe(customPath);
-    expect(output.join("\n")).toContain(`Next: cd '${customPath}'`);
+    expect(output.join("\n")).toContain(
+      `Next: cd '${customPath}' && export ROADKIT_ROOT='${customPath}'`
+    );
     expect(git(root, "-C", customPath, "rev-parse", "HEAD")).toBe(base);
     const started = await createContainer(customPath);
     expect((await started.repo.findIssue(issue.id))?.assignee).toBe("ely");

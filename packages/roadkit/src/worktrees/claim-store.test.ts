@@ -102,9 +102,25 @@ describe("WorktreeClaimStore", () => {
     const original = await store.claim(input("ISSUE-0009", "agent:old"));
     await store.release("ISSUE-0009");
     const replacement = await store.claim(input("ISSUE-0009", "agent:new"));
+    await writeClaimFile(
+      "ISSUE-0009",
+      JSON.stringify({ ...replacement, createdAt: original.createdAt })
+    );
 
-    await expect(store.release("ISSUE-0009", original.createdAt)).rejects.toThrow("Claim changed");
-    expect(await store.get("ISSUE-0009")).toEqual(replacement);
+    await expect(store.release("ISSUE-0009", original.claimId)).rejects.toThrow("Claim changed");
+    expect((await store.get("ISSUE-0009"))?.claimId).toBe(replacement.claimId);
+  });
+
+  it("derives stable identities for legacy claims without stored claim IDs", async () => {
+    await writeClaimFile("ISSUE-0010", JSON.stringify(claimJson("ISSUE-0010")));
+    const legacy = await store.get("ISSUE-0010");
+    if (!legacy) throw new Error("expected legacy claim");
+    expect(legacy.claimId.startsWith("legacy:")).toBe(true);
+    await store.release("ISSUE-0010");
+    const replacement = await store.claim(input("ISSUE-0010", "agent:new"));
+
+    await expect(store.release("ISSUE-0010", legacy.claimId)).rejects.toThrow("Claim changed");
+    expect((await store.get("ISSUE-0010"))?.claimId).toBe(replacement.claimId);
   });
 
   function input(issueId: string, actor = "agent:test") {

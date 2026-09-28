@@ -1,5 +1,6 @@
 export interface WorktreeClaim {
   protocolVersion: 1;
+  claimId: string;
   issueId: string;
   actor: string;
   branch: string;

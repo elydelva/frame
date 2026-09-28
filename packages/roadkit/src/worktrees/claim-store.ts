@@ -79,7 +79,9 @@ export class WorktreeClaimStore {
     }
   }
 
-  async claim(input: Omit<WorktreeClaim, "protocolVersion" | "createdAt">): Promise<WorktreeClaim> {
+  async claim(
+    input: Omit<WorktreeClaim, "protocolVersion" | "claimId" | "createdAt">
+  ): Promise<WorktreeClaim> {
     const filePath = this.claimPath(input.issueId);
     await fs.mkdir(this.claimsDir, { recursive: true });
     return this.withIssueLock(input.issueId, async () => {
@@ -87,6 +89,7 @@ export class WorktreeClaimStore {
       if (existing) throw new IssueAlreadyClaimedError(existing);
       const claim: WorktreeClaim = {
         protocolVersion: CLAIM_PROTOCOL_VERSION,
+        claimId: randomUUID(),
         ...input,
         createdAt: new Date().toISOString(),
       };
@@ -115,7 +118,7 @@ export class WorktreeClaimStore {
     });
   }
 
-  async release(issueId: string, expectedCreatedAt?: string): Promise<WorktreeClaim> {
+  async release(issueId: string, expectedClaimId?: string): Promise<WorktreeClaim> {
     const filePath = this.claimPath(issueId);
     await fs.mkdir(this.claimsDir, { recursive: true });
     return this.withIssueLock(issueId, async () => {
@@ -123,7 +126,7 @@ export class WorktreeClaimStore {
       if (!claim) {
         throw new ClaimStoreError("INVALID_CLAIM", filePath, "No claim exists");
       }
-      if (expectedCreatedAt && claim.createdAt !== expectedCreatedAt) {
+      if (expectedClaimId && claim.claimId !== expectedClaimId) {
         throw new ClaimStoreError("INVALID_CLAIM", filePath, "Claim changed while releasing");
       }
       await fs.rm(filePath);
@@ -215,8 +218,28 @@ export class WorktreeClaimStore {
     return path.join(this.claimsDir, `${issueId}.json`);
   }
 
-  private async readClaim(filePath: string, expectedIssueId: string): Promise<WorktreeClaim> {
+  private async readClaim(
+    filePath: string,
+    expectedIssueId: string,
+    attempts = 0
+  ): Promise<WorktreeClaim> {
+    const statBefore = await fs.stat(filePath, { bigint: true });
     const raw = await fs.readFile(filePath, "utf-8");
+    const statAfter = await fs.stat(filePath, { bigint: true });
+    if (
+      statBefore.dev !== statAfter.dev ||
+      statBefore.ino !== statAfter.ino ||
+      statBefore.ctimeNs !== statAfter.ctimeNs
+    ) {
+      if (attempts >= 2) {
+        throw new ClaimStoreError(
+          "INVALID_CLAIM",
+          filePath,
+          "Claim changed repeatedly while being read"
+        );
+      }
+      return this.readClaim(filePath, expectedIssueId, attempts + 1);
+    }
     let parsed: unknown;
     try {
       parsed = JSON.parse(raw);
@@ -244,6 +267,10 @@ export class WorktreeClaimStore {
 
     const claim: WorktreeClaim = {
       protocolVersion: CLAIM_PROTOCOL_VERSION,
+      claimId:
+        typeof parsed.claimId === "string" && parsed.claimId.length > 0
+          ? parsed.claimId
+          : `legacy:${statAfter.dev}:${statAfter.ino}:${statAfter.ctimeNs}`,
       issueId: typeof parsed.issueId === "string" ? parsed.issueId : "",
       actor: typeof parsed.actor === "string" ? parsed.actor : "",
       branch: typeof parsed.branch === "string" ? parsed.branch : "",

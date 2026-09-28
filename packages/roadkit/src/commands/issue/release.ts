@@ -12,7 +12,7 @@ export async function runIssueRelease(
   const { actor } = resolveActor(opts);
   const snapshot = await container.claims.get(issueId);
   if (!snapshot) throw new Error(`No claim exists for ${issueId}`);
-  const claim = await container.claims.release(issueId, snapshot.createdAt);
+  const claim = await container.claims.release(issueId, snapshot.claimId);
   const result = { claim, releasedBy: actor };
   getFormatter(opts.json ?? false).emit({
     json: result,

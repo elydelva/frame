@@ -25,6 +25,7 @@ rkit context --active | pbcopy   # paste into your agent
 rkit next                         # what to work on next
 rkit issue worktree ISSUE-0001    # claim, create a branch and start in isolation
 # cd into the absolute path printed by rkit
+export ROADKIT_ROOT="$PWD"
 rkit brief --issue ISSUE-0001
 # after the branch is integrated, release only its local claim
 rkit issue release ISSUE-0001

@@ -114,7 +114,7 @@ export ROADKIT_ACTOR_TYPE="agent"
 \`\`\`sh
 rkit next
 rkit issue worktree ISSUE-XXXX # claims, creates a branch and starts the issue
-# Run the printed command: cd <absolute-worktree-path>
+# Run the printed command: cd <path> && export ROADKIT_ROOT=<path>
 rkit brief --issue ISSUE-XXXX  # inspect rules + dependencies inside its worktree
 # ...do the work, honouring the rules in the brief...
 rkit issue complete ISSUE-XXXX --message "..." # only when completion is authorized
@@ -123,6 +123,8 @@ rkit issue release ISSUE-XXXX # after integration or intentional abandonment
 
 Claims are local to this Git clone and shared by its linked worktrees. Releasing
 removes only the claim; it leaves the worktree and its files in place.
+The printed command sets \`ROADKIT_ROOT\` to the task worktree so later commands
+continue reading and writing the task branch even when that variable was set before.
 
 ## Completing an issue
 
