@@ -4,10 +4,13 @@ import { DEFAULT_CONFIG } from "@roadkit/core";
 import {
   CONFIG_FILE,
   MD_EXT,
+  REALM_MANIFEST_FILE,
   ROADKIT_DIR,
   STATE_FILE,
   TEMPLATES_DIR,
+  readRealmFormat,
   writeRealmConfig,
+  writeRealmFormat,
 } from "@roadkit/fs";
 
 const PROJECT_TEMPLATE = `---
@@ -158,11 +161,20 @@ async function exists(p: string): Promise<boolean> {
 }
 
 export async function runInit(realmRoot: string): Promise<void> {
+  // Validate before creating or updating any realm files. A missing manifest is
+  // legacy format 1 and is materialized below; an incompatible one fails closed.
+  await readRealmFormat(realmRoot);
+
   const roadkitDir = path.join(realmRoot, ROADKIT_DIR);
   const templatesDir = path.join(roadkitDir, TEMPLATES_DIR);
 
   await fs.mkdir(roadkitDir, { recursive: true });
   await fs.mkdir(templatesDir, { recursive: true });
+
+  const manifestPath = path.join(roadkitDir, REALM_MANIFEST_FILE);
+  if (!(await exists(manifestPath))) {
+    await writeRealmFormat(realmRoot);
+  }
 
   const stateFile = path.join(roadkitDir, STATE_FILE);
   if (!(await exists(stateFile))) {
@@ -191,6 +203,7 @@ export async function runInit(realmRoot: string): Promise<void> {
   await installPreCommitHook(realmRoot);
 
   console.log(`✓ Initialized ${ROADKIT_DIR}/`);
+  console.log(`  ${ROADKIT_DIR}/${REALM_MANIFEST_FILE}`);
   console.log(`  ${ROADKIT_DIR}/${STATE_FILE}`);
   for (const [name] of TEMPLATES) {
     console.log(`  ${ROADKIT_DIR}/${TEMPLATES_DIR}/${name}${MD_EXT}`);

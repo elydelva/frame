@@ -1,6 +1,7 @@
 export {
   ROADKIT_DIR,
   STATE_FILE,
+  REALM_MANIFEST_FILE,
   CONFIG_FILE,
   PROJECTS_DIR,
   SPECS_DIR,
@@ -10,6 +11,12 @@ export {
   TEMPLATES_DIR,
   MD_EXT,
 } from "./constants.js";
+export {
+  CURRENT_REALM_FORMAT,
+  RealmFormatError,
+  readRealmFormat,
+  writeRealmFormat,
+} from "./config/format-version.js";
 export { FsRealmRepository } from "./realm.repository.js";
 export { slugify } from "./slug.js";
 export { readRealmConfig, writeRealmConfig } from "./config/realm-config.reader.js";

@@ -19,7 +19,7 @@ import {
   SetSpecStatusUseCase,
   StartIssueUseCase,
 } from "@roadkit/core";
-import { FsRealmRepository, ROADKIT_DIR } from "@roadkit/fs";
+import { FsRealmRepository, REALM_MANIFEST_FILE, ROADKIT_DIR } from "@roadkit/fs";
 import type { Container } from "../container.js";
 import { runBrief } from "./brief.js";
 import { runContext } from "./context.js";
@@ -112,6 +112,9 @@ describe("roadkit CLI commands", () => {
 
     const state = JSON.parse(await fs.readFile(path.join(tempDir, ROADKIT_DIR, ".state"), "utf-8"));
     expect(state).toEqual({ project: 0, milestone: 0, issue: 0, spec: 0 });
+    expect(
+      JSON.parse(await fs.readFile(path.join(tempDir, ROADKIT_DIR, REALM_MANIFEST_FILE), "utf-8"))
+    ).toEqual({ formatVersion: 1 });
 
     const templates = await fs.readdir(path.join(tempDir, ROADKIT_DIR, "templates"));
     expect(templates.sort()).toEqual(["issue.md", "milestone.md", "project.md", "spec.md"]);
@@ -119,6 +122,26 @@ describe("roadkit CLI commands", () => {
     const agents = await fs.readFile(path.join(tempDir, "AGENTS.md"), "utf-8");
     expect(agents).toContain("rkit brief");
     expect(agents).toContain("ROADKIT_ACTOR");
+  });
+
+  it("init adds a format manifest to a legacy realm without replacing existing files", async () => {
+    const configPath = path.join(tempDir, "roadfig.yml");
+    await fs.writeFile(configPath, "version: 1\ncustom: preserve\n", "utf-8");
+    const templatesDir = path.join(tempDir, ROADKIT_DIR, "templates");
+    await fs.mkdir(templatesDir, { recursive: true });
+    const templatePath = path.join(templatesDir, "issue.md");
+    await fs.writeFile(templatePath, "custom template\n", "utf-8");
+
+    const cap = captureLog();
+    await runInit(tempDir);
+    await runInit(tempDir);
+    cap.restore();
+
+    expect(
+      JSON.parse(await fs.readFile(path.join(tempDir, ROADKIT_DIR, REALM_MANIFEST_FILE), "utf-8"))
+    ).toEqual({ formatVersion: 1 });
+    expect(await fs.readFile(configPath, "utf-8")).toBe("version: 1\ncustom: preserve\n");
+    expect(await fs.readFile(templatePath, "utf-8")).toBe("custom template\n");
   });
 
   it("installs a pre-commit hook in a git repo without clobbering an existing one", async () => {
