@@ -187,6 +187,19 @@ labels:
 rkit issue add --project PROJ-0001 --title "Fix auth" --priority high --estimate M
 ```
 
+## Roadkit data format
+
+`rkit init` writes `.roadkit/manifest.json` with `formatVersion: 1`. This
+entity format version is independent of the `roadfig.yml` configuration
+version and the installed CLI package version. Repositories initialized
+before the manifest existed are treated as format 1; `rkit init` adds the
+manifest without replacing existing realm files.
+
+If the installed CLI cannot read a realm's format, it exits with a structured
+error before reading or mutating that realm. Use a compatible CLI or restore
+the realm data from version control. Format migrations are explicit and are
+not performed automatically.
+
 ---
 
 ## The spec
