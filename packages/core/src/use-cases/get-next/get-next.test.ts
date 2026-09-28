@@ -25,6 +25,14 @@ describe("GetNextUseCase", () => {
     expect(await useCase.execute()).toBeNull();
   });
 
+  it("accepts an empty exclusion set without changing the existing result", async () => {
+    const issue = Issue.create({ id: IssueId.generate(1), projectId, title: "I", author: "a" });
+    await repo.saveIssue(issue);
+    expect((await useCase.execute({ excludedIssueIds: new Set() }))?.issue.id.toString()).toBe(
+      "ISSUE-0001"
+    );
+  });
+
   it("returns the eligible issue with its project", async () => {
     const issue = Issue.create({ id: IssueId.generate(1), projectId, title: "I", author: "a" });
     await repo.saveIssue(issue);
@@ -32,6 +40,23 @@ describe("GetNextUseCase", () => {
     expect(result?.issue.id.toString()).toBe("ISSUE-0001");
     expect(result?.project.id.equals(projectId)).toBe(true);
     expect(result?.milestone).toBeNull();
+  });
+
+  it("skips excluded issue IDs without changing priority order for remaining issues", async () => {
+    await repo.saveIssue({
+      ...Issue.create({ id: IssueId.generate(1), projectId, title: "urgent claimed", author: "a" }),
+      priority: "urgent",
+    });
+    await repo.saveIssue({
+      ...Issue.create({ id: IssueId.generate(2), projectId, title: "normal", author: "a" }),
+      priority: "normal",
+    });
+    expect(
+      (await useCase.execute({ excludedIssueIds: new Set(["ISSUE-0001"]) }))?.issue.id.toString()
+    ).toBe("ISSUE-0002");
+    expect((await useCase.execute({ excludedIssueIds: new Set() }))?.issue.id.toString()).toBe(
+      "ISSUE-0001"
+    );
   });
 
   it("prefers higher priority", async () => {

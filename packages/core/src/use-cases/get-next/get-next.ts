@@ -10,7 +10,11 @@ export interface NextResult {
   milestone: Milestone | null;
 }
 
-export class GetNextUseCase implements UseCase<void, NextResult | null> {
+export interface GetNextOptions {
+  excludedIssueIds?: ReadonlySet<string>;
+}
+
+export class GetNextUseCase implements UseCase<GetNextOptions | undefined, NextResult | null> {
   private readonly dagService = new DAGService();
   private readonly rank: (p: string) => number;
 
@@ -21,14 +25,17 @@ export class GetNextUseCase implements UseCase<void, NextResult | null> {
     this.rank = priorityRank(config);
   }
 
-  async execute(): Promise<NextResult | null> {
+  async execute(options: GetNextOptions = {}): Promise<NextResult | null> {
     const [allIssues, allProjects, allMilestones] = await Promise.all([
       this.repo.findAllIssues(),
       this.repo.findAllProjects(),
       this.repo.findAllMilestones(),
     ]);
 
-    const eligible = this.dagService.getEligibleIssues(allIssues, allProjects, allMilestones);
+    const excluded = options.excludedIssueIds ?? new Set<string>();
+    const eligible = this.dagService
+      .getEligibleIssues(allIssues, allProjects, allMilestones)
+      .filter((issue) => !excluded.has(issue.id.toString()));
     if (eligible.length === 0) return null;
 
     const projectMap = new Map(allProjects.map((p) => [p.id.toString(), p]));

@@ -10,6 +10,7 @@ import type { UseCase } from "../use-case.js";
 export interface BriefFilter {
   issueId?: IssueId;
   projectId?: ProjectId;
+  excludedIssueIds?: ReadonlySet<string>;
 }
 
 export interface BriefDependency {
@@ -61,7 +62,9 @@ export class GetBriefUseCase implements UseCase<BriefFilter, Brief> {
       this.repo.findAllSpecs(),
     ]);
 
-    const next = await this.getNext.execute();
+    const next = await this.getNext.execute(
+      filter.excludedIssueIds ? { excludedIssueIds: filter.excludedIssueIds } : {}
+    );
 
     // Focus: explicit --issue, else whatever `next` surfaces.
     const issue = filter.issueId

@@ -31,9 +31,20 @@ export async function runIssueList(container: Container, opts: IssueListOptions)
     ? await container.repo.findIssuesForProject(ProjectId.from(opts.project))
     : await container.repo.findAllIssues();
   const issues = all.filter((i) => matches(i, opts));
+  const claimEntries = (await container.claims?.list()) ?? [];
+  const claims = new Map(claimEntries.map((entry) => [entry.issueId, entry]));
 
   getFormatter(opts.json ?? false).emit({
-    json: issues.map(serializeIssue),
+    json: issues.map((issue) => {
+      const entry = claims.get(issue.id.toString());
+      return {
+        ...serializeIssue(issue),
+        claim: entry?.claim
+          ? { actor: entry.claim.actor, branch: entry.claim.branch, path: entry.claim.path }
+          : null,
+        claimError: entry?.error ?? null,
+      };
+    }),
     human: () => {
       if (issues.length === 0) {
         console.log("No issues.");
@@ -43,7 +54,13 @@ export async function runIssueList(container: Container, opts: IssueListOptions)
         const est = formatEstimate(container.config, i.estimate);
         const tag = est ? `${i.priority} · ${est}` : i.priority;
         const who = i.assignee ? `  @${i.assignee}` : "";
-        console.log(`${i.id.toString()}  [${i.status}]  ${i.title}  (${tag})${who}`);
+        const claim = claims.get(i.id.toString());
+        const claimInfo = claim?.claim
+          ? `  claimed by ${claim.claim.actor} · ${claim.claim.path}`
+          : claim?.error
+            ? `  claim unavailable (${claim.error.code})`
+            : "";
+        console.log(`${i.id.toString()}  [${i.status}]  ${i.title}  (${tag})${who}${claimInfo}`);
       }
     },
   });

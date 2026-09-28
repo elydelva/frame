@@ -9,7 +9,10 @@ interface NextOptions {
 
 export async function runNext(container: Container, opts: NextOptions): Promise<void> {
   setJsonMode(opts.json ?? false);
-  const result = await container.getNext.execute();
+  const claimEntries = (await container.claims?.list()) ?? [];
+  const result = await container.getNext.execute({
+    excludedIssueIds: new Set(claimEntries.map((entry) => entry.issueId)),
+  });
 
   getFormatter(opts.json ?? false).emit({
     json: result

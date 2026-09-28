@@ -22,12 +22,14 @@ import {
 } from "@roadkit/core";
 import { FsRealmRepository, REALM_MANIFEST_FILE, ROADKIT_DIR } from "@roadkit/fs";
 import type { Container } from "../container.js";
+import { createContainer } from "../container.js";
 import { runBrief } from "./brief.js";
 import { runContext } from "./context.js";
 import { runHistory } from "./history.js";
 import { runInit } from "./init.js";
 import { runIssueAdd } from "./issue/add.js";
 import { runIssueComplete } from "./issue/complete.js";
+import { runIssueList } from "./issue/list.js";
 import { runIssueStart } from "./issue/start.js";
 import { setJsonMode } from "./json-mode.js";
 import { runLint } from "./lint.js";
@@ -230,6 +232,79 @@ describe("roadkit CLI commands", () => {
     const traceFiles = await fs.readdir(path.join(projectsDir, projDirs[0] as string, "traces"));
     expect(traceFiles.length).toBeGreaterThan(0);
     expect(traceFiles.every((f) => /^TRACE-.+\.md$/.test(f))).toBe(true);
+  });
+
+  it("hides claims from next and discloses them in explicit briefs and issue lists", async () => {
+    const initialized = spawnSync("git", ["init", "-q"], { cwd: tempDir });
+    if (initialized.status !== 0) throw new Error("git init failed");
+    await runInit(tempDir);
+    const container = await createContainer(tempDir);
+    const project = await container.createProject.execute({
+      title: "Claims",
+      author: "test",
+      actor: "test",
+      leads: [],
+      body: "",
+    });
+    await container.setProjectStatus.execute({ id: project.id, to: "active", actor: "test" });
+    const first = await container.createIssue.execute({
+      projectId: project.id,
+      title: "Claimed first",
+      author: "test",
+      actor: "test",
+      priority: "urgent",
+      labels: [],
+      gates: [],
+      body: "",
+    });
+    await container.createIssue.execute({
+      projectId: project.id,
+      title: "Available second",
+      author: "test",
+      actor: "test",
+      priority: "normal",
+      labels: [],
+      gates: [],
+      body: "",
+    });
+    await container.claims?.claim({
+      issueId: first.id.toString(),
+      actor: "agent:worker",
+      branch: "issue/claimed-first",
+      path: path.join(container.repoRoot, ".worktrees", "claimed"),
+    });
+
+    const nextCapture = captureLog();
+    await runNext(container, { json: true });
+    const next = JSON.parse(nextCapture.lines.join(" ")) as { issue: { id: string } };
+    nextCapture.restore();
+    expect(next.issue.id).toBe("ISSUE-0002");
+
+    const briefCapture = captureLog();
+    await runBrief(container, { issue: first.id.toString(), json: true });
+    const brief = JSON.parse(briefCapture.lines.join(" ")) as {
+      claim: { actor: string; path: string };
+    };
+    briefCapture.restore();
+    expect(brief.claim.actor).toBe("agent:worker");
+    expect(brief.claim.path).toContain(".worktrees/claimed");
+    const humanBrief = captureLog();
+    await runBrief(container, { issue: first.id.toString() });
+    expect(humanBrief.lines.join("\n")).toContain(`Claim: agent:worker · ${brief.claim.path}`);
+    humanBrief.restore();
+
+    const listCapture = captureLog();
+    await runIssueList(container, { json: true });
+    const rows = JSON.parse(listCapture.lines.join(" ")) as Array<{
+      id: string;
+      claim: { actor: string } | null;
+    }>;
+    listCapture.restore();
+    expect(rows.find((row) => row.id === first.id.toString())?.claim?.actor).toBe("agent:worker");
+    const humanList = captureLog();
+    await runIssueList(container, {});
+    expect(humanList.lines.join("\n")).toContain(`claimed by agent:worker · ${brief.claim.path}`);
+    humanList.restore();
   });
 
   it("emits machine-readable context and history", async () => {

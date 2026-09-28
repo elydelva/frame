@@ -13,20 +13,33 @@ interface BriefOptions {
 export async function runBrief(container: Container, opts: BriefOptions): Promise<void> {
   setJsonMode(opts.json ?? false);
 
-  const filter: { issueId?: IssueId; projectId?: ProjectId } = {};
+  const claimEntries = (await container.claims?.list()) ?? [];
+  const excludedIssueIds = new Set(claimEntries.map((entry) => entry.issueId));
+  const filter: {
+    issueId?: IssueId;
+    projectId?: ProjectId;
+    excludedIssueIds: ReadonlySet<string>;
+  } = { excludedIssueIds };
   if (opts.issue) filter.issueId = IssueId.from(opts.issue);
   if (opts.project) filter.projectId = ProjectId.from(opts.project);
 
-  const brief = await container.getBrief.execute(filter);
+  const brief = await container.getBrief.execute({ ...filter, excludedIssueIds });
+  const claim = brief.issue
+    ? (claimEntries.find((entry) => entry.issueId === brief.issue?.id.toString())?.claim ?? null)
+    : null;
 
   getFormatter(opts.json ?? false).emit({
-    json: serializeBrief(brief),
-    human: () => console.log(renderBrief(container, brief)),
+    json: { ...serializeBrief(brief), claim },
+    human: () => console.log(renderBrief(container, brief, claim)),
   });
 }
 
 /** Render a Markdown block ready to paste into an agent's system prompt. */
-function renderBrief(container: Container, brief: Brief): string {
+function renderBrief(
+  container: Container,
+  brief: Brief,
+  claim: { actor: string; path: string } | null
+): string {
   const lines: string[] = ["# roadkit brief", ""];
 
   if (!brief.issue) {
@@ -46,6 +59,7 @@ function renderBrief(container: Container, brief: Brief): string {
     project ? `Project: ${project.id.toString()} — ${project.title}` : "",
     milestone ? `Milestone: ${milestone.id.toString()} — ${milestone.title}` : ""
   );
+  if (claim) lines.push(`Claim: ${claim.actor} · ${claim.path}`);
 
   if (brief.blockedReason) {
     lines.push("", `> ⚠ Blocked: ${brief.blockedReason}`);
