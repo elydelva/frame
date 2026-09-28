@@ -41,11 +41,11 @@
 
 **Interface:** each registration module exports `registerProjectCommands(program: Command, getRealmRoot: () => string): void`, `registerMilestoneCommands(program: Command, getRealmRoot: () => string): void`, `registerIssueCommands(program: Command, getRealmRoot: () => string): void`, or `registerSpecCommands(program: Command, getRealmRoot: () => string): void`. The functions append the same group and descendants to the provided program and use the getter when an action runs.
 
-- [ ] Move one domain's existing registrations verbatim into its registration function, preserving order and options.
-- [ ] Repeat for the remaining three domains; keep all top-level commands and root JSON behavior in `cli.ts`.
-- [ ] Update `buildCLI()` to invoke the four registration functions in the existing order.
-- [ ] Verify with package build/typecheck, Biome lint/format, and source-level comparison of every command/option/action.
-- [ ] Commit as `refactor(cli): group command registration by domain`.
+- [x] Move one domain's existing registrations verbatim into its registration function, preserving order and options.
+- [x] Repeat for the remaining three domains; keep all top-level commands and root JSON behavior in `cli.ts`.
+- [x] Update `buildCLI()` to invoke the four registration functions in the existing order.
+- [x] Verify with package build/typecheck, Biome lint/format, and source-level comparison of every command/option/action.
+- [x] Commit as `refactor(cli): group command registration by domain`.
 
 ### Task 2: Centralize CLI errors and exits
 
