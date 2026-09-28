@@ -112,10 +112,17 @@ export ROADKIT_ACTOR_TYPE="agent"
 ## Loop
 
 \`\`\`sh
-rkit brief --json              # focus issue + rules + dependencies + next
-rkit issue start ISSUE-XXXX    # rules are recorded as acknowledged
+rkit next
+rkit issue worktree ISSUE-XXXX # claims, creates a branch and starts the issue
+# Run the printed command: cd <absolute-worktree-path>
+rkit brief --issue ISSUE-XXXX  # inspect rules + dependencies inside its worktree
 # ...do the work, honouring the rules in the brief...
+rkit issue complete ISSUE-XXXX --message "..." # only when completion is authorized
+rkit issue release ISSUE-XXXX # after integration or intentional abandonment
 \`\`\`
+
+Claims are local to this Git clone and shared by its linked worktrees. Releasing
+removes only the claim; it leaves the worktree and its files in place.
 
 ## Completing an issue
 

@@ -23,7 +23,16 @@ rkit spec new --project PROJ-0001 --title "Switch auth to JWT"
 
 rkit context --active | pbcopy   # paste into your agent
 rkit next                         # what to work on next
+rkit issue worktree ISSUE-0001    # claim, create a branch and start in isolation
+# cd into the absolute path printed by rkit
+rkit brief --issue ISSUE-0001
+# after the branch is integrated, release only its local claim
+rkit issue release ISSUE-0001
 ```
+
+Worktree claims coordinate agents using linked worktrees in one local clone.
+They are not shared across separate clones. Releasing a claim never deletes its
+worktree or changes issue status; remove the worktree separately when it is safe.
 
 ## Realm format compatibility
 

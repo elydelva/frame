@@ -38,7 +38,21 @@ rkit context --active | pbcopy
 rkit next
 # → ISSUE-0041: Implement token rotation logic
 #    3 other issues will unblock after this one. Start here.
+
+# Claim it in an isolated branch and worktree
+rkit issue worktree ISSUE-0041
+# → prints the absolute path and `cd` command
+cd /path/printed/by/rkit
+rkit brief --issue ISSUE-0041
+# ...implement and validate...
+rkit issue complete ISSUE-0041 --message "Token rotation implemented"
+# after integration or intentional abandonment: release the local claim
+rkit issue release ISSUE-0041
 ```
+
+Claims are stored in the Git common directory and coordinate linked worktrees
+in this clone only. They are local execution state, not shared between clones.
+Releasing a claim does not delete its worktree or change issue status.
 
 ---
 
