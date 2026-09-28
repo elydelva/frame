@@ -4,7 +4,7 @@ import {
   type RawEntityRecord,
   type RealmConfig,
   type RealmScan,
-} from "@roadkit/core";
+} from "@frame/core";
 import type { LintFinding, LintReport } from "./types.js";
 
 const ID_PATTERN: Record<RawEntityKind, RegExp> = {
@@ -41,7 +41,7 @@ function gateIssueId(gate: string): string {
  * statuses, resolvable references, no dependency cycles, and config-conformant
  * priority/labels. It does NOT enforce rule
  * triggers (before_edit, …) — those are agent-prompt constraints surfaced by
- * `rkit brief`, not file-validatable here.
+ * `frame brief`, not file-validatable here.
  */
 export class LintEngine {
   private readonly config: RealmConfig;
@@ -150,7 +150,7 @@ export class LintEngine {
   ): void {
     const priority = asString(value);
     if (priority && !this.config.priority.levels.includes(priority)) {
-      add("warning", "priority-valid", `Priority not in roadfig.yml levels: ${priority}`);
+      add("warning", "priority-valid", `Priority not in .frameconfig levels: ${priority}`);
     }
   }
 

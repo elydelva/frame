@@ -5,5 +5,5 @@
   "packages/lint": "0.1.0",
   "packages/tui": "0.1.0",
   "packages/sync": "0.1.0",
-  "packages/roadkit": "0.1.0"
+  "packages/frame": "0.1.0"
 }

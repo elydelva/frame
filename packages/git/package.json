@@ -1,8 +1,8 @@
 {
-  "name": "@roadkit/git",
+  "name": "@frame/git",
   "version": "0.0.0",
   "private": true,
-  "description": "roadkit git adapter \u2014 staging, history, hooks",
+  "description": "frame git adapter \u2014 staging, history, hooks",
   "type": "module",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist && rm -f tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@roadkit/core": "workspace:*"
+    "@frame/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "catalog:"

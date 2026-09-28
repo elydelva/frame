@@ -4,7 +4,7 @@
 **v0.2** — File format revised: 2-file model
 **v0.3** — File format revised: tasks/ + traces/ subdirs, rules inline in frontmatter, realm-scoped IDs
 **v0.4** — .adrconfig introduced: user-defined types, templates as schema + scaffold, linter/formatter config
-**v0.5** — Implementation stack decided, `.adrconfig` split, ID collision strategy, git hooks native, `adrkit next` algorithm, rules enforcement model clarified
+**v0.5** — Implementation stack decided, `.adrconfig` split, ID collision strategy, git hooks native, `adframe next` algorithm, rules enforcement model clarified
 
 > *"Git tracks what changed. ADRKit tracks why."*
 
@@ -71,7 +71,7 @@ ADRKit introduces its own vocabulary — inspired by ADR tradition but modernize
 Each ADR is a directory with a fixed layout: one root file, two optional subdirectories.
 
 ```
-.adrkit/
+.adframe/
   ADR-0001-use-drizzle-as-orm/
     ADR-0001-use-drizzle-as-orm.md   # required — machine frontmatter + human body
     tasks/
@@ -251,7 +251,7 @@ This enables fine-grained cross-ADR blocking without requiring the entire parent
 
 ADRKit builds a directed acyclic graph (DAG) from all dependency declarations. This graph is the backbone of the TUI visualization and all progress computation.
 
-Cycles are a hard error — `adrkit lint` catches them before they corrupt the graph.
+Cycles are a hard error — `adframe lint` catches them before they corrupt the graph.
 
 ---
 
@@ -319,34 +319,34 @@ The frontmatter carries the machine-readable event data. The body is optional fr
 
 | Event | Triggered by |
 |---|---|
-| `adr_created` | `adrkit new` |
-| `adr_status_changed` | `adrkit status set` |
-| `task_created` | `adrkit task add` |
-| `task_started` | `adrkit task start` |
-| `task_completed` | `adrkit task complete` |
-| `task_abandoned` | `adrkit task abandon` |
-| `rules_acknowledged` | `adrkit rules ack` |
-| `note` | `adrkit trace emit` (manual) |
-| `synced` | any `adrkit sync` call |
+| `adr_created` | `adframe new` |
+| `adr_status_changed` | `adframe status set` |
+| `task_created` | `adframe task add` |
+| `task_started` | `adframe task start` |
+| `task_completed` | `adframe task complete` |
+| `task_abandoned` | `adframe task abandon` |
+| `rules_acknowledged` | `adframe rules ack` |
+| `note` | `adframe trace emit` (manual) |
+| `synced` | any `adframe sync` call |
 
 ### Git integration
 
-ADRKit is git-native. Every `adrkit` command that mutates state auto-stages the affected files. The user commits at their own cadence — ADRKit never commits for you.
+ADRKit is git-native. Every `adframe` command that mutates state auto-stages the affected files. The user commits at their own cadence — ADRKit never commits for you.
 
 ```bash
-adrkit task complete TASK-0002
+adframe task complete TASK-0002
 # → updates status + completed_at in TASK-0002.md frontmatter
 # → creates TRACE-XXXX.md in ADR-0001/traces/
-# → git add .adrkit/ADR-0001/ (auto-staged, not committed)
+# → git add .adframe/ADR-0001/ (auto-staged, not committed)
 ```
 
 ### Timeline query
 
 ```bash
-adrkit history ADR-0001              # all traces for this ADR
-adrkit history --since 2025-03-20   # traces since a date
-adrkit history --actor agent:claude  # all agent-generated changes
-adrkit history --global              # full project timeline (across all ADRs)
+adframe history ADR-0001              # all traces for this ADR
+adframe history --since 2025-03-20   # traces since a date
+adframe history --actor agent:claude  # all agent-generated changes
+adframe history --global              # full project timeline (across all ADRs)
 ```
 
 ---
@@ -370,7 +370,7 @@ rules:
     trigger: after_edit
     instruction: >
       After any file change in scope of an ADR, emit a trace via
-      `adrkit trace emit` identifying yourself as actor.
+      `adframe trace emit` identifying yourself as actor.
 
   - id: RULE-G003
     trigger: before_edit
@@ -406,7 +406,7 @@ rules:
 When an agent operates on a task, the applicable rules are loaded in order: global → ADR-level → task-level. They compose, they don't override each other.
 
 ```bash
-adrkit context --task TASK-0002
+adframe context --task TASK-0002
 # → returns all applicable rules in order, ready to inject into agent context
 ```
 
@@ -421,10 +421,10 @@ adrkit context --task TASK-0002
 
 Rules are **soft enforcement by design**. This is an explicit philosophical choice: an agent that bypasses the CLI and edits files directly cannot be stopped at the CLI level regardless of any hardcoded gate. The real enforcement layer is git hooks (see section 9).
 
-The optional `adrkit rules ack` command allows disciplined agents to emit a `rules_acknowledged` trace before acting, creating an auditable record that rules were consulted:
+The optional `adframe rules ack` command allows disciplined agents to emit a `rules_acknowledged` trace before acting, creating an auditable record that rules were consulted:
 
 ```bash
-adrkit rules ack \
+adframe rules ack \
   --task TASK-0002 \
   --trigger before_edit \
   --actor "agent:claude-sonnet-4-6"
@@ -438,48 +438,48 @@ This is not required. It is a signal — for agents that want to produce a clean
 
 ## 9. Git Hooks
 
-ADRKit installs native git hooks into `.git/hooks/` when `adrkit init` is run. No external dependency (no Husky, no Node runtime required at hook time). The hooks call `adrkit` commands, which must be available in `PATH`.
+ADRKit installs native git hooks into `.git/hooks/` when `adframe init` is run. No external dependency (no Husky, no Node runtime required at hook time). The hooks call `adframe` commands, which must be available in `PATH`.
 
 This is the real enforcement layer of the rules engine. A hook cannot be bypassed by an agent editing files directly — it blocks the commit or push regardless of how the files were modified.
 
 ### Installed hooks
 
-`adrkit init` generates the following hooks:
+`adframe init` generates the following hooks:
 
-**`pre-commit`** — runs before every commit that touches `.adrkit/` files.
+**`pre-commit`** — runs before every commit that touches `.adframe/` files.
 
 ```bash
 #!/bin/sh
-# generated by adrkit init — do not edit manually
+# generated by adframe init — do not edit manually
 
-# Run linter on staged .adrkit/ changes
-if git diff --cached --name-only | grep -q "^\.adrkit/"; then
-  adrkit lint --staged
+# Run linter on staged .adframe/ changes
+if git diff --cached --name-only | grep -q "^\.adframe/"; then
+  adframe lint --staged
   if [ $? -ne 0 ]; then
-    echo "[adrkit] Commit blocked: realm integrity check failed."
-    echo "         Run 'adrkit lint' for details."
+    echo "[adframe] Commit blocked: realm integrity check failed."
+    echo "         Run 'adframe lint' for details."
     exit 1
   fi
 fi
 ```
 
-What `adrkit lint --staged` checks at pre-commit time:
+What `adframe lint --staged` checks at pre-commit time:
 - All modified frontmatter fields are valid (types, statuses, references)
 - No existing trace file has been modified (L030)
 - Status transitions are valid (L020)
 - No dependency cycles introduced (L012)
 - No ADR in `abandoned` status was modified without a `--human-confirmed` trace
 
-**`commit-msg`** — checks that any commit touching `.adrkit/` references a valid ADR ID.
+**`commit-msg`** — checks that any commit touching `.adframe/` references a valid ADR ID.
 
 ```bash
 #!/bin/sh
-# generated by adrkit init — do not edit manually
+# generated by adframe init — do not edit manually
 
-if git diff --cached --name-only | grep -q "^\.adrkit/"; then
+if git diff --cached --name-only | grep -q "^\.adframe/"; then
   if ! grep -qE "ADR-[0-9]{4}" "$1"; then
-    echo "[adrkit] Commit message must reference an ADR ID (e.g. ADR-0001)"
-    echo "         when committing changes to .adrkit/"
+    echo "[adframe] Commit message must reference an ADR ID (e.g. ADR-0001)"
+    echo "         when committing changes to .adframe/"
     exit 1
   fi
 fi
@@ -489,17 +489,17 @@ fi
 
 ```bash
 #!/bin/sh
-# generated by adrkit init — do not edit manually
+# generated by adframe init — do not edit manually
 
-adrkit lint --check-collisions --remote origin
+adframe lint --check-collisions --remote origin
 if [ $? -ne 0 ]; then
-  echo "[adrkit] Push blocked: ADR/TASK/TRACE ID collision detected."
-  echo "         Run 'adrkit renumber' to resolve, then re-commit."
+  echo "[adframe] Push blocked: ADR/TASK/TRACE ID collision detected."
+  echo "         Run 'adframe renumber' to resolve, then re-commit."
   exit 1
 fi
 ```
 
-If `adrkit renumber` is needed, it reassigns conflicting IDs sequentially (taking the max of local and remote counters) and updates all internal references atomically.
+If `adframe renumber` is needed, it reassigns conflicting IDs sequentially (taking the max of local and remote counters) and updates all internal references atomically.
 
 ### Hook configuration
 
@@ -521,9 +521,9 @@ hooks:
 ### Reinstalling hooks
 
 ```bash
-adrkit hooks install     # (re)install all hooks
-adrkit hooks uninstall   # remove all adrkit hooks
-adrkit hooks status      # show which hooks are installed and their config
+adframe hooks install     # (re)install all hooks
+adframe hooks uninstall   # remove all adframe hooks
+adframe hooks status      # show which hooks are installed and their config
 ```
 
 ---
@@ -538,32 +538,32 @@ Fast, opinionated, never asks twice.
 
 ```bash
 # Initialize a realm
-adrkit init
+adframe init
 
 # Create a new ADR interactively
-adrkit new
+adframe new
 # → prompts: title, tags, phase, template
 # → creates ADR-XXXX-slug/ directory with ADR-XXXX.md scaffold
 
 # Create with flags (non-interactive, agent-friendly)
-adrkit new --title "Use Redis for session cache" --tags tech,infra --phase mvp
+adframe new --title "Use Redis for session cache" --tags tech,infra --phase mvp
 
 # Add a task
-adrkit task add ADR-0001 --title "Evaluate Redis vs Memcached" --est 2h
+adframe task add ADR-0001 --title "Evaluate Redis vs Memcached" --est 2h
 
 # Update status
-adrkit status set ADR-0001 in-progress
-adrkit task complete TASK-0024
+adframe status set ADR-0001 in-progress
+adframe task complete TASK-0024
 
 # Declare a dependency
-adrkit link ADR-0002 --depends-on ADR-0001
-adrkit link ADR-0002 --related-to ADR-0003
+adframe link ADR-0002 --depends-on ADR-0001
+adframe link ADR-0002 --related-to ADR-0003
 
 # Open the ADR body in $EDITOR (frontmatter is CLI-managed)
-adrkit edit ADR-0001
+adframe edit ADR-0001
 
 # Lint the whole realm
-adrkit lint
+adframe lint
 ```
 
 ### Navigate mode — CLI
@@ -571,16 +571,16 @@ adrkit lint
 Query and explore without a TUI.
 
 ```bash
-adrkit list                        # all ADRs with status
-adrkit list --status in-progress   # filter by status
-adrkit list --tag tech             # filter by tag
-adrkit show ADR-0001               # full ADR detail
-adrkit graph --text                # ASCII dependency graph
-adrkit progress                    # overall realm progress summary
-adrkit next                        # what to work on next (respects gates + priority)
+adframe list                        # all ADRs with status
+adframe list --status in-progress   # filter by status
+adframe list --tag tech             # filter by tag
+adframe show ADR-0001               # full ADR detail
+adframe graph --text                # ASCII dependency graph
+adframe progress                    # overall realm progress summary
+adframe next                        # what to work on next (respects gates + priority)
 ```
 
-### `adrkit next` — algorithm
+### `adframe next` — algorithm
 
 A task is **eligible** if all three conditions are met:
 1. Its parent ADR status is `accepted` or `in-progress`
@@ -596,32 +596,32 @@ Among eligible tasks, priority is determined by three successive criteria:
 In plain terms: *work on what unblocks the most things, in the most urgent phase, in order of arrival.*
 
 ```bash
-adrkit next                        # top candidate
-adrkit next --count 5              # top 5 candidates with scores
-adrkit next --json                 # machine-readable output for agents
+adframe next                        # top candidate
+adframe next --count 5              # top 5 candidates with scores
+adframe next --json                 # machine-readable output for agents
 ```
 
 ### Supervise mode — TUI
 
-`adrkit tui` launches a full-screen terminal interface (described in section 12).
+`adframe tui` launches a full-screen terminal interface (described in section 12).
 
 ### Templates
 
-Types and templates are declared in `.adrconfig`. `adrkit new` picks the right template automatically from the type — or the user overrides it.
+Types and templates are declared in `.adrconfig`. `adframe new` picks the right template automatically from the type — or the user overrides it.
 
 ```bash
-adrkit new --type feature          # uses adr/feature template
-adrkit new --type tech-choice      # uses adr/tech-choice template
-adrkit new                         # interactive: prompts for type, title, phase
+adframe new --type feature          # uses adr/feature template
+adframe new --type tech-choice      # uses adr/tech-choice template
+adframe new                         # interactive: prompts for type, title, phase
 
-adrkit task add ADR-0001 --type research   # uses task/research template
-adrkit task add ADR-0001                   # interactive
+adframe task add ADR-0001 --type research   # uses task/research template
+adframe task add ADR-0001                   # interactive
 
-adrkit template list               # list all declared types + their templates
-adrkit template edit adr/feature   # open template in $EDITOR
+adframe template list               # list all declared types + their templates
+adframe template edit adr/feature   # open template in $EDITOR
 ```
 
-Types are user-defined in `.adrconfig` — there are no hardcoded types in ADRKit. The built-in templates ship as defaults that `adrkit init` copies into `.adrkit/templates/`. Users modify or delete them freely.
+Types are user-defined in `.adrconfig` — there are no hardcoded types in ADRKit. The built-in templates ship as defaults that `adframe init` copies into `.adframe/templates/`. Users modify or delete them freely.
 
 ---
 
@@ -634,9 +634,9 @@ ADRKit is built from the ground up to be operated by AI agents. The Agent Experi
 Agents receive a structured context payload when entering an ADR realm. ADRKit provides this via:
 
 ```bash
-adrkit context                     # JSON dump of full realm state
-adrkit context --adr ADR-0001      # context scoped to one ADR
-adrkit context --active            # only in-progress ADRs + their rules
+adframe context                     # JSON dump of full realm state
+adframe context --adr ADR-0001      # context scoped to one ADR
+adframe context --active            # only in-progress ADRs + their rules
 ```
 
 The context payload includes:
@@ -667,10 +667,10 @@ Agents call ADRKit commands the same way humans do — via the CLI. There is no 
 ADRKit distinguishes agent traces from human traces via the `--actor` flag:
 
 ```bash
-adrkit task complete TASK-0002 --actor "agent:claude-sonnet-4-6" --message "Schema layer written"
-adrkit trace emit --adr ADR-0001 --event code_written --actor "agent:claude" --message "Wrote 3 Drizzle schemas"
-adrkit status set ADR-0001 completed --actor "agent:claude"
-adrkit rules ack --task TASK-0002 --trigger before_edit --actor "agent:claude"
+adframe task complete TASK-0002 --actor "agent:claude-sonnet-4-6" --message "Schema layer written"
+adframe trace emit --adr ADR-0001 --event code_written --actor "agent:claude" --message "Wrote 3 Drizzle schemas"
+adframe status set ADR-0001 completed --actor "agent:claude"
+adframe rules ack --task TASK-0002 --trigger before_edit --actor "agent:claude"
 ```
 
 The audit log always distinguishes who (or what) made a change.
@@ -681,36 +681,36 @@ Some actions require a `--human-confirmed` flag to proceed. This prevents runawa
 
 ```bash
 # These require --human-confirmed:
-adrkit status set ADR-0001 abandoned --human-confirmed
-adrkit link ADR-0002 --conflicts-with ADR-0001 --human-confirmed
-adrkit new --human-confirmed   # agents can propose, humans confirm creation
+adframe status set ADR-0001 abandoned --human-confirmed
+adframe link ADR-0002 --conflicts-with ADR-0001 --human-confirmed
+adframe new --human-confirmed   # agents can propose, humans confirm creation
 ```
 
 Without `--human-confirmed`, the command dry-runs and prints what it would do, returning a non-zero exit code. This is the default safe mode for agents.
 
-The second enforcement layer — below the CLI — is the git hooks (section 9). Even an agent that edits `.adrkit/` files directly without going through the CLI will be blocked at commit time by `pre-commit`, which runs `adrkit lint --staged` regardless of how the files were modified.
+The second enforcement layer — below the CLI — is the git hooks (section 9). Even an agent that edits `.adframe/` files directly without going through the CLI will be blocked at commit time by `pre-commit`, which runs `adframe lint --staged` regardless of how the files were modified.
 
 ### AA — Agent workflow pattern
 
 A well-behaved agent operating in an ADRKit realm follows this loop:
 
 ```
-1. adrkit context --active             # load current state + rules
+1. adframe context --active             # load current state + rules
 2. Read applicable_rules               # inject into system prompt
-3. adrkit rules ack --trigger before_edit --actor agent:X  # optional but recommended
-4. adrkit next                         # determine what to work on
+3. adframe rules ack --trigger before_edit --actor agent:X  # optional but recommended
+4. adframe next                         # determine what to work on
 5. Do the work (edit files, etc.)
-6. adrkit trace emit [...]             # log what was done
-7. adrkit task complete [...] --actor agent:X   # advance state if done
-8. adrkit lint                         # verify realm integrity
-9. git add .adrkit/ && git status      # surface changes to human
+6. adframe trace emit [...]             # log what was done
+7. adframe task complete [...] --actor agent:X   # advance state if done
+8. adframe lint                         # verify realm integrity
+9. git add .adframe/ && git status      # surface changes to human
 ```
 
 ---
 
 ## 12. TUI — Live Graph & Supervision
 
-`adrkit tui` launches a full-screen terminal UI built with **Ink** (React for the terminal, Node.js). Ink was chosen as the v1 foundation because it is proven at scale — Claude Code was originally built on Ink before migrating to a custom renderer, and the component model it establishes (React/JSX, declarative state) is the right architectural foundation regardless of the rendering backend.
+`adframe tui` launches a full-screen terminal UI built with **Ink** (React for the terminal, Node.js). Ink was chosen as the v1 foundation because it is proven at scale — Claude Code was originally built on Ink before migrating to a custom renderer, and the component model it establishes (React/JSX, declarative state) is the right architectural foundation regardless of the rendering backend.
 
 If ADRKit's TUI evolves toward long-running interactive sessions with continuous streaming updates, a custom renderer (following the Claude Code or OpenTUI/Zig pattern) can replace the Ink renderer without changing the component model. This is explicitly a v2 concern.
 
@@ -796,10 +796,10 @@ adapters:
 ### Linear adapter
 
 ```bash
-adrkit sync linear                          # sync all
-adrkit sync linear --adr ADR-0001           # sync one ADR
-adrkit sync linear --pull                   # pull status changes from Linear → ADRKit
-adrkit sync linear --push                   # push ADRKit state → Linear
+adframe sync linear                          # sync all
+adframe sync linear --adr ADR-0001           # sync one ADR
+adframe sync linear --pull                   # pull status changes from Linear → ADRKit
+adframe sync linear --push                   # push ADRKit state → Linear
 ```
 
 **What syncs:**
@@ -819,9 +819,9 @@ adrkit sync linear --push                   # push ADRKit state → Linear
 ### GitHub adapter
 
 ```bash
-adrkit sync github
-adrkit sync github --adr ADR-0001
-adrkit sync github --use projects
+adframe sync github
+adframe sync github --adr ADR-0001
+adframe sync github --use projects
 ```
 
 **What syncs:**
@@ -840,12 +840,12 @@ adrkit sync github --use projects
 All adapters follow the same CLI pattern:
 
 ```bash
-adrkit sync <adapter>                   # sync everything
-adrkit sync <adapter> --adr <id>        # sync one
-adrkit sync <adapter> --dry-run         # preview changes
-adrkit sync <adapter> --pull            # pull only
-adrkit sync <adapter> --push            # push only
-adrkit sync <adapter> --status          # show last sync state per ADR
+adframe sync <adapter>                   # sync everything
+adframe sync <adapter> --adr <id>        # sync one
+adframe sync <adapter> --dry-run         # preview changes
+adframe sync <adapter> --pull            # pull only
+adframe sync <adapter> --push            # push only
+adframe sync <adapter> --status          # show last sync state per ADR
 ```
 
 ### Future adapters (not v1)
@@ -864,43 +864,43 @@ adrkit sync <adapter> --status          # show last sync state per ADR
 ### Top-level commands
 
 ```
-adrkit init                        Initialize a new realm in current directory
-adrkit new                         Create a new ADR (interactive or flags)
-adrkit edit <id>                   Open ADR body in $EDITOR
-adrkit show <id>                   Display ADR detail
-adrkit list                        List all ADRs
-adrkit status set <id> <status>    Update ADR status
-adrkit link <id> [--depends-on|--related-to|--conflicts-with] <id2>
-adrkit lint                        Validate realm integrity
-adrkit context                     Export agent context as JSON
-adrkit next                        Show what to work on next
-adrkit history [id]                Show trace history
-adrkit graph                       Print ASCII dependency graph
-adrkit progress                    Print progress summary
-adrkit tui                         Launch TUI
-adrkit renumber                    Resolve ID collisions after a conflicting merge
+adframe init                        Initialize a new realm in current directory
+adframe new                         Create a new ADR (interactive or flags)
+adframe edit <id>                   Open ADR body in $EDITOR
+adframe show <id>                   Display ADR detail
+adframe list                        List all ADRs
+adframe status set <id> <status>    Update ADR status
+adframe link <id> [--depends-on|--related-to|--conflicts-with] <id2>
+adframe lint                        Validate realm integrity
+adframe context                     Export agent context as JSON
+adframe next                        Show what to work on next
+adframe history [id]                Show trace history
+adframe graph                       Print ASCII dependency graph
+adframe progress                    Print progress summary
+adframe tui                         Launch TUI
+adframe renumber                    Resolve ID collisions after a conflicting merge
 
-adrkit task add <adr>              Add a task to an ADR
-adrkit task start <task>           Mark task as in-progress
-adrkit task complete <task>        Mark task as completed
-adrkit task abandon <task>         Mark task as abandoned
-adrkit task show <task>            Show task detail
+adframe task add <adr>              Add a task to an ADR
+adframe task start <task>           Mark task as in-progress
+adframe task complete <task>        Mark task as completed
+adframe task abandon <task>         Mark task as abandoned
+adframe task show <task>            Show task detail
 
-adrkit trace emit                  Emit a manual trace event
-adrkit rules ack                   Emit a rules_acknowledged trace (agent use)
+adframe trace emit                  Emit a manual trace event
+adframe rules ack                   Emit a rules_acknowledged trace (agent use)
 
-adrkit template list               List templates
-adrkit template add <name>         Create a new template
+adframe template list               List templates
+adframe template add <name>         Create a new template
 
-adrkit hooks install               Install git hooks into .git/hooks/
-adrkit hooks uninstall             Remove adrkit git hooks
-adrkit hooks status                Show hook installation state
+adframe hooks install               Install git hooks into .git/hooks/
+adframe hooks uninstall             Remove adframe git hooks
+adframe hooks status                Show hook installation state
 
-adrkit sync <adapter>              Sync with external adapter
-adrkit sync --status               Show all adapter sync states
+adframe sync <adapter>              Sync with external adapter
+adframe sync --status               Show all adapter sync states
 
-adrkit version                     Print version
-adrkit help                        Help
+adframe version                     Print version
+adframe help                        Help
 ```
 
 ### Global flags
@@ -924,8 +924,8 @@ adrkit help                        Help
 ```
 my-project/
   .adrconfig                            # workspace config — linter, formatter, types, templates, adapters, hooks
-  .gitattributes                        # merge driver declaration for .adrkit/.state (generated by adrkit init)
-  .adrkit/
+  .gitattributes                        # merge driver declaration for .adframe/.state (generated by adframe init)
+  .adframe/
     .state                              # counters — committed, managed by CLI, custom merge driver
     ADR-0001-use-drizzle-as-orm/
       ADR-0001-use-drizzle-as-orm.md
@@ -946,37 +946,37 @@ my-project/
         ...
 ```
 
-`.adrconfig` lives at the repository root alongside `package.json`, `biome.json` — it is a workspace-level config file. `.adrkit/` is the data directory.
+`.adrconfig` lives at the repository root alongside `package.json`, `biome.json` — it is a workspace-level config file. `.adframe/` is the data directory.
 
-**ID scoping:** All IDs (`ADR-`, `TASK-`, `TRACE-`) are realm-scoped and globally sequential. Counters live in `.adrkit/.state` and are incremented by the CLI on every create operation.
+**ID scoping:** All IDs (`ADR-`, `TASK-`, `TRACE-`) are realm-scoped and globally sequential. Counters live in `.adframe/.state` and are incremented by the CLI on every create operation.
 
-### `.adrkit/.state` — counter file
+### `.adframe/.state` — counter file
 
-The counter file is **committed to git** but uses a custom merge driver declared in `.gitattributes` (generated by `adrkit init`). On merge conflict, the driver takes the `max()` of each counter from both sides — the result is always safe and never requires manual resolution.
+The counter file is **committed to git** but uses a custom merge driver declared in `.gitattributes` (generated by `adframe init`). On merge conflict, the driver takes the `max()` of each counter from both sides — the result is always safe and never requires manual resolution.
 
 ```yaml
-# .adrkit/.state
-# managed by adrkit — do not edit manually
+# .adframe/.state
+# managed by adframe — do not edit manually
 adr: 7
 task: 31
 trace: 88
 ```
 
 ```
-# .gitattributes (generated by adrkit init)
-.adrkit/.state merge=adrkit-state
+# .gitattributes (generated by adframe init)
+.adframe/.state merge=adframe-state
 ```
 
 ```
-# .git/config (generated by adrkit init — local only, not committed)
-[merge "adrkit-state"]
+# .git/config (generated by adframe init — local only, not committed)
+[merge "adframe-state"]
     name = ADRKit state merger
-    driver = adrkit merge-state %O %A %B
+    driver = adframe merge-state %O %A %B
 ```
 
 ### `.adrconfig` — full spec
 
-`.adrconfig` is a YAML file at the repository root. It is the single source of truth for static configuration: types, templates, linter, formatter, global AI rules, adapter config, and hook config. It does **not** contain counters (those are in `.adrkit/.state`).
+`.adrconfig` is a YAML file at the repository root. It is the single source of truth for static configuration: types, templates, linter, formatter, global AI rules, adapter config, and hook config. It does **not** contain counters (those are in `.adframe/.state`).
 
 ```yaml
 # .adrconfig
@@ -1193,7 +1193,7 @@ rules:
     trigger: after_edit
     instruction: >
       After any file change in scope of an ADR, emit a trace via
-      `adrkit trace emit` identifying yourself as actor.
+      `adframe trace emit` identifying yourself as actor.
   - id: RULE-G003
     trigger: before_edit
     instruction: >
@@ -1203,11 +1203,11 @@ rules:
 
 ### Templates
 
-Templates live in `.adrkit/templates/` and are referenced by name from `.adrconfig`. Each template is a Markdown file whose frontmatter declares the schema for that type, and whose body is the scaffold inserted by `adrkit new`.
+Templates live in `.adframe/templates/` and are referenced by name from `.adrconfig`. Each template is a Markdown file whose frontmatter declares the schema for that type, and whose body is the scaffold inserted by `adframe new`.
 
 ```markdown
 ---
-# .adrkit/templates/adr/tech-choice.md
+# .adframe/templates/adr/tech-choice.md
 schema:
   required: [id, type, title, status, phase, tags, author, created_at]
   optional: [depends_on, related_to, conflicts_with, supersedes, adapters, rules]
@@ -1239,7 +1239,7 @@ body_sections:
 
 ```markdown
 ---
-# .adrkit/templates/task/research.md
+# .adframe/templates/task/research.md
 schema:
   required: [id, type, adr, title, status, author, created_at]
   optional: [assignee, estimated_hours, gates, rules]
@@ -1279,7 +1279,7 @@ body_sections:
 This founding paper is, itself, the first ADR of the ADRKit project. Once the tool exists, it will be bootstrapped as:
 
 ```yaml
-# .adrkit/ADR-0000-adrkit-founding-vision/ADR-0000-adrkit-founding-vision.md
+# .adframe/ADR-0000-adframe-founding-vision/ADR-0000-adframe-founding-vision.md
 id: ADR-0000
 title: ADRKit — Founding Vision
 status: accepted
@@ -1325,13 +1325,13 @@ The directory-per-ADR model keeps each decision fully self-contained and indepen
 
 Rules live in frontmatter rather than a separate file because they are data about the entity, not a separate document. An ADR without rules simply omits the key — no empty file left behind.
 
-### Why `.adrconfig` and `.adrkit/.state` are separate files
+### Why `.adrconfig` and `.adframe/.state` are separate files
 
-`.adrconfig` is modified rarely — when someone adds a new type, edits a linter rule, or changes a template. It changes in PRs, by humans, intentionally. `.adrkit/.state` is modified on every `adrkit new` — it is high-frequency, automated, and structurally trivial (three integers). Co-locating them in a single file would cause git conflicts on counters every time two branches create any entity, regardless of whether the actual configuration changed. The split eliminates the noise entirely.
+`.adrconfig` is modified rarely — when someone adds a new type, edits a linter rule, or changes a template. It changes in PRs, by humans, intentionally. `.adframe/.state` is modified on every `adframe new` — it is high-frequency, automated, and structurally trivial (three integers). Co-locating them in a single file would cause git conflicts on counters every time two branches create any entity, regardless of whether the actual configuration changed. The split eliminates the noise entirely.
 
 ### Why a custom git merge driver for `.state`
 
-A lockfile analogy applies: `bun.lock` is committed and occasionally has conflicts when two branches add dependencies simultaneously. `.adrkit/.state` would have conflicts constantly if left to standard git merge — every feature branch creating an ADR would collide. The custom merge driver (`adrkit merge-state`) resolves this by taking the `max()` of each counter from both sides. The result is always correct, always safe, and requires zero human intervention. This driver is configured by `adrkit init` and declared in `.gitattributes`.
+A lockfile analogy applies: `bun.lock` is committed and occasionally has conflicts when two branches add dependencies simultaneously. `.adframe/.state` would have conflicts constantly if left to standard git merge — every feature branch creating an ADR would collide. The custom merge driver (`adframe merge-state`) resolves this by taking the `max()` of each counter from both sides. The result is always correct, always safe, and requires zero human intervention. This driver is configured by `adframe init` and declared in `.gitattributes`.
 
 ### Why YAML, not JSON?
 
@@ -1339,15 +1339,15 @@ Human-writable. Comments are valid. Multiline strings are readable. The agent al
 
 ### Why no database?
 
-ADRKit's state is the files. A SQLite cache may be introduced later for query performance on large realms, but it is always derived from files and can be regenerated with `adrkit rebuild-index`. The files are the truth.
+ADRKit's state is the files. A SQLite cache may be introduced later for query performance on large realms, but it is always derived from files and can be regenerated with `adframe rebuild-index`. The files are the truth.
 
 ### Why git hooks instead of Husky or a Node-specific solution?
 
-ADRKit is not a Node project — it is a tool that installs into any git repository, regardless of the project's language or ecosystem. Native git hooks in `.git/hooks/` work everywhere git does: Go projects, Python projects, monorepos, bare repositories. Husky is an excellent tool for Node projects that want to manage hooks declaratively in `package.json`, but it introduces a Node runtime dependency that ADRKit cannot assume. `adrkit init` generates shell scripts — the only dependency is `adrkit` itself being in `PATH`.
+ADRKit is not a Node project — it is a tool that installs into any git repository, regardless of the project's language or ecosystem. Native git hooks in `.git/hooks/` work everywhere git does: Go projects, Python projects, monorepos, bare repositories. Husky is an excellent tool for Node projects that want to manage hooks declaratively in `package.json`, but it introduces a Node runtime dependency that ADRKit cannot assume. `adframe init` generates shell scripts — the only dependency is `adframe` itself being in `PATH`.
 
 ### Why soft enforcement for rules?
 
-Rules are natural language prose intended for agents to read and reason about. Hard enforcement at the CLI level only protects against agents that go through the CLI — which are precisely the well-integrated agents least likely to misbehave. An agent that edits `.adrkit/` files directly bypasses any CLI gate. The `pre-commit` hook, which runs `adrkit lint --staged` regardless of how files were modified, is the actual enforcement layer. The CLI's soft model is therefore not a weakness — it is the right division of responsibility: CLI for ergonomics, hooks for enforcement.
+Rules are natural language prose intended for agents to read and reason about. Hard enforcement at the CLI level only protects against agents that go through the CLI — which are precisely the well-integrated agents least likely to misbehave. An agent that edits `.adframe/` files directly bypasses any CLI gate. The `pre-commit` hook, which runs `adframe lint --staged` regardless of how files were modified, is the actual enforcement layer. The CLI's soft model is therefore not a weakness — it is the right division of responsibility: CLI for ergonomics, hooks for enforcement.
 
 ### Why delegate auth to target CLIs?
 
@@ -1362,7 +1362,7 @@ The name ADRKit is intentional:
 - **ADR** — roots it in the established Architecture Decision Records tradition
 - **Kit** — signals tooling, not dogma. A kit is pragmatic, composable, yours to use how you need.
 
-The command is `adrkit` (lowercase, one word). Files live in `.adrkit/`. There is no abbreviation.
+The command is `adframe` (lowercase, one word). Files live in `.adframe/`. There is no abbreviation.
 
 ---
 
@@ -1380,24 +1380,24 @@ These are binding decisions, not preferences. They are documented here with the 
 
 ADRKit's TUI is a supervision tool, not a long-running streaming agent interface. File watching + DAG display + trace feed does not push Ink's limits. If it ever does, the migration path is documented: swap the rendering backend (as Claude Code did) while keeping the component model intact. This is explicitly a v2 concern.
 
-**Distribution:** `npm install -g adrkit` — or standalone binary via `bun build --compile`.
+**Distribution:** `npm install -g adframe` — or standalone binary via `bun build --compile`.
 
 ### Linter — TypeScript in v1, Rust path in v2
 
-In v1, the linter (`@adrkit/lint`) is implemented in TypeScript and integrated into the monorepo as a standard package. It implements the `ILinterAdapter` port defined in `@adrkit/core`.
+In v1, the linter (`@adframe/lint`) is implemented in TypeScript and integrated into the monorepo as a standard package. It implements the `ILinterAdapter` port defined in `@adframe/core`.
 
-The linter is computationally distinct from the CLI — it parses N YAML files, constructs a DAG, detects cycles, verifies hash integrity against git history, and resolves cross-references. On large realms this workload can become significant. The `ILinterAdapter` interface is designed to allow a Rust subprocess (`adrkit-lint`) to replace the TypeScript implementation in v2 without touching any other layer. This follows the established pattern of Biome, dprint, and oxc.
+The linter is computationally distinct from the CLI — it parses N YAML files, constructs a DAG, detects cycles, verifies hash integrity against git history, and resolves cross-references. On large realms this workload can become significant. The `ILinterAdapter` interface is designed to allow a Rust subprocess (`adframe-lint`) to replace the TypeScript implementation in v2 without touching any other layer. This follows the established pattern of Biome, dprint, and oxc.
 
-The v2 Rust path: `adrkit-lint` published to crates.io, called via `Bun.spawn`, output consumed as JSON. The interface contract is identical — only the implementation changes.
+The v2 Rust path: `adframe-lint` published to crates.io, called via `Bun.spawn`, output consumed as JSON. The interface contract is identical — only the implementation changes.
 
 ### Summary
 
 | Component | Language | v1 | v2 path |
 |---|---|---|---|
-| CLI | TypeScript + Bun | `npm install -g adrkit` | — |
+| CLI | TypeScript + Bun | `npm install -g adframe` | — |
 | TUI | Ink (React/TSX) | bundled with CLI | custom renderer if needed |
-| Linter | TypeScript → Rust | `@adrkit/lint` package | `adrkit-lint` Rust subprocess |
-| Git hooks | Shell scripts | generated by `adrkit init` | — |
+| Linter | TypeScript → Rust | `@adframe/lint` package | `adframe-lint` Rust subprocess |
+| Git hooks | Shell scripts | generated by `adframe init` | — |
 
 ---
 

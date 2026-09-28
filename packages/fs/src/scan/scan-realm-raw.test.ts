@@ -14,7 +14,7 @@ describe("scanRealmRaw", () => {
   let root: string;
 
   beforeEach(async () => {
-    root = await fs.mkdtemp(path.join(os.tmpdir(), "roadkit-scan-"));
+    root = await fs.mkdtemp(path.join(os.tmpdir(), "frame-scan-"));
   });
 
   afterEach(async () => {
@@ -27,7 +27,7 @@ describe("scanRealmRaw", () => {
   });
 
   it("collects project, issue, and spec records with raw frontmatter", async () => {
-    const dir = ".roadkit/projects/PROJ-0001-checkout";
+    const dir = ".frame/projects/PROJ-0001-checkout";
     await write(root, `${dir}/PROJ-0001.md`, "---\nid: PROJ-0001\nstatus: active\n---\n");
     await write(
       root,
@@ -51,7 +51,7 @@ describe("scanRealmRaw", () => {
   });
 
   it("captures malformed frontmatter as a diagnostic", async () => {
-    const dir = ".roadkit/projects/PROJ-0001-x";
+    const dir = ".frame/projects/PROJ-0001-x";
     await write(root, `${dir}/PROJ-0001.md`, "---\nid: PROJ-0001\nstatus: active\n---\n");
     await write(
       root,

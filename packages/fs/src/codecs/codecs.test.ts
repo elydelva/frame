@@ -10,7 +10,7 @@ import {
   SpecId,
   Trace,
   TraceId,
-} from "@roadkit/core";
+} from "@frame/core";
 import { codecs } from "./codecs.js";
 
 describe("codecs registry", () => {

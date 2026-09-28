@@ -18,7 +18,7 @@ Requires [Bun](https://bun.sh) ≥ 1.3.
 | `bun run lint` | Lint with Biome |
 | `bun run check` | Lint + format (auto-fix) |
 | `bun run build` | Build all packages |
-| `bun run build:bin` | Compile standalone `rkit` binary |
+| `bun run build:bin` | Compile standalone `frame` binary |
 
 ## Workflow
 
@@ -61,17 +61,17 @@ Breaking changes: add `!` after the type (`feat(core)!:`) or a `BREAKING CHANGE:
 
 ```text
 packages/
-  core/     @roadkit/core   — domain, ports, use cases
-  fs/       @roadkit/fs     — filesystem adapter
-  git/      @roadkit/git    — git adapter
-  lint/     @roadkit/lint   — validation engine
-  tui/      @roadkit/tui    — terminal interface
-  sync/     @roadkit/sync   — external adapters (Linear, GitHub)
-  roadkit/  roadkit         — published binary `rkit` (entry point + DI)
+  core/     @frame/core   — domain, ports, use cases
+  fs/       @frame/fs     — filesystem adapter
+  git/      @frame/git    — git adapter
+  lint/     @frame/lint   — validation engine
+  tui/      @frame/tui    — terminal interface
+  sync/     @frame/sync   — external adapters (Linear, GitHub)
+  frame/  frame         — published binary `frame` (entry point + DI)
 docs/       — founding paper, architecture, v0.x scope docs
 ```
 
-Only `roadkit` (the `rkit` binary) is published to npm. All `@roadkit/*` packages are private (monorepo-only) in v1.
+Only `frame` (the `frame` binary) is published to npm. All `@frame/*` packages are private (monorepo-only) in v1.
 
 ## Code quality
 

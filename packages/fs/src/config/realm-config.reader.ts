@@ -6,7 +6,7 @@ import {
   type EstimationScale,
   type LabelConfig,
   type RealmConfig,
-} from "@roadkit/core";
+} from "@frame/core";
 import yaml from "js-yaml";
 import { CONFIG_FILE } from "../constants.js";
 
@@ -89,7 +89,7 @@ function parseLabels(val: unknown): LabelConfig[] {
 }
 
 /**
- * Read `roadfig.yml`, defensively. Any missing/unknown/malformed section falls
+ * Read `.frameconfig`, defensively. Any missing/unknown/malformed section falls
  * back to `DEFAULT_CONFIG`. Legacy ADRKit keys (`idFormat`/`types`/`templates`)
  * are simply ignored, so existing realms load with defaults — zero breakage.
  */

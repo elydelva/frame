@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { RawEntityRecord, RealmScan } from "@roadkit/core";
+import type { RawEntityRecord, RealmScan } from "@frame/core";
 import { LintEngine } from "./engine.js";
 
 function scan(records: RawEntityRecord[], diagnostics: RealmScan["diagnostics"] = []): RealmScan {
@@ -9,7 +9,7 @@ function scan(records: RawEntityRecord[], diagnostics: RealmScan["diagnostics"] 
 function project(id = "PROJ-0001", over: Record<string, unknown> = {}): RawEntityRecord {
   return {
     kind: "project",
-    file: `.roadkit/projects/${id}-p/${id}.md`,
+    file: `.frame/projects/${id}-p/${id}.md`,
     data: { id, status: "active", ...over },
   };
 }
@@ -17,7 +17,7 @@ function project(id = "PROJ-0001", over: Record<string, unknown> = {}): RawEntit
 function issue(id = "ISSUE-0001", over: Record<string, unknown> = {}): RawEntityRecord {
   return {
     kind: "issue",
-    file: `.roadkit/projects/PROJ-0001-p/issues/${id}-x.md`,
+    file: `.frame/projects/PROJ-0001-p/issues/${id}-x.md`,
     data: { id, projectId: "PROJ-0001", status: "not-started", ...over },
   };
 }
@@ -44,23 +44,23 @@ describe("LintEngine", () => {
 
   it("flags an id that does not match the filename", () => {
     const rec = issue("ISSUE-0001");
-    rec.file = ".roadkit/projects/PROJ-0001-p/issues/ISSUE-9999-x.md";
+    rec.file = ".frame/projects/PROJ-0001-p/issues/ISSUE-9999-x.md";
     const report = engine.run(scan([project(), rec]));
     expect(report.findings.some((f) => f.code === "id-matches-filename")).toBe(true);
   });
 
   it("flags two files claiming the same id", () => {
     const canonical = issue("ISSUE-0005", { status: "in-progress" });
-    canonical.file = ".roadkit/projects/PROJ-0001-p/issues/ISSUE-0005-good-slug.md";
+    canonical.file = ".frame/projects/PROJ-0001-p/issues/ISSUE-0005-good-slug.md";
     const stale = issue("ISSUE-0005", { status: "not-started" });
-    stale.file = ".roadkit/projects/PROJ-0001-p/issues/ISSUE-0005-old-slug.md";
+    stale.file = ".frame/projects/PROJ-0001-p/issues/ISSUE-0005-old-slug.md";
 
     const report = engine.run(scan([project(), canonical, stale]));
 
     const dups = report.findings.filter((f) => f.code === "unique-ids");
     expect(dups.map((f) => f.file).sort()).toEqual([
-      ".roadkit/projects/PROJ-0001-p/issues/ISSUE-0005-good-slug.md",
-      ".roadkit/projects/PROJ-0001-p/issues/ISSUE-0005-old-slug.md",
+      ".frame/projects/PROJ-0001-p/issues/ISSUE-0005-good-slug.md",
+      ".frame/projects/PROJ-0001-p/issues/ISSUE-0005-old-slug.md",
     ]);
     expect(dups.every((f) => f.severity === "error")).toBe(true);
   });

@@ -1,12 +1,12 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import type { RawEntityKind, RawEntityRecord, RealmScan, ScanDiagnostic } from "@roadkit/core";
+import type { RawEntityKind, RawEntityRecord, RealmScan, ScanDiagnostic } from "@frame/core";
 import {
+  FRAME_DIR,
   ISSUES_DIR,
   MD_EXT,
   MILESTONES_DIR,
   PROJECTS_DIR,
-  ROADKIT_DIR,
   SPECS_DIR,
 } from "../constants.js";
 import { parseFrontmatter } from "../parsers/frontmatter.parser.js";
@@ -41,7 +41,7 @@ const CHILD_SPECS: ChildSpec[] = [
 ];
 
 /**
- * Read every entity file under `.roadkit/projects/` and parse its frontmatter
+ * Read every entity file under `.frame/projects/` and parse its frontmatter
  * strictly, capturing malformed files as diagnostics rather than swallowing
  * them. Traces are excluded — they are append-only machine records, not linted.
  * Records carry raw frontmatter for the lint engine to validate.
@@ -49,7 +49,7 @@ const CHILD_SPECS: ChildSpec[] = [
 export async function scanRealmRaw(realmRoot: string): Promise<RealmScan> {
   const records: RawEntityRecord[] = [];
   const diagnostics: ScanDiagnostic[] = [];
-  const projectsRoot = path.join(realmRoot, ROADKIT_DIR, PROJECTS_DIR);
+  const projectsRoot = path.join(realmRoot, FRAME_DIR, PROJECTS_DIR);
 
   const read = async (absPath: string, kind: RawEntityKind): Promise<void> => {
     const rel = path.relative(realmRoot, absPath);

@@ -5,7 +5,7 @@
  * duplicated across every entity parser.
  */
 
-import type { Rule } from "@roadkit/core";
+import type { Rule } from "@frame/core";
 
 export function toDate(val: unknown): Date {
   if (val instanceof Date) return val;

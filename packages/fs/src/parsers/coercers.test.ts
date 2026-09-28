@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { IssueId } from "@roadkit/core";
+import { IssueId } from "@frame/core";
 import {
   toDate,
   toDateOrNull,

@@ -11,15 +11,15 @@ import type {
   Spec,
   Trace,
   TraceFilter,
-} from "@roadkit/core";
-import type { IssueId, MilestoneId, ProjectId, SpecId } from "@roadkit/core";
+} from "@frame/core";
+import type { IssueId, MilestoneId, ProjectId, SpecId } from "@frame/core";
 import { getState, incrementCounter } from "./config/state.manager.js";
 import {
+  FRAME_DIR,
   ISSUES_DIR,
   MD_EXT,
   MILESTONES_DIR,
   PROJECTS_DIR,
-  ROADKIT_DIR,
   SPECS_DIR,
   TRACES_DIR,
 } from "./constants.js";
@@ -79,7 +79,7 @@ export class FsRealmRepository implements IRealmRepository {
   ) {}
 
   private get projectsRoot(): string {
-    return path.join(this.realmRoot, ROADKIT_DIR, PROJECTS_DIR);
+    return path.join(this.realmRoot, FRAME_DIR, PROJECTS_DIR);
   }
 
   /** Resolve the on-disk directory for a project id, or null if absent. */

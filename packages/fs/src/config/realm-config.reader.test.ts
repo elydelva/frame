@@ -6,7 +6,7 @@ import { CONFIG_FILE } from "../constants.js";
 import { readRealmConfig, writeRealmConfig } from "./realm-config.reader.js";
 
 async function mkTempDir(): Promise<string> {
-  return fs.mkdtemp(path.join(os.tmpdir(), "roadkit-config-test-"));
+  return fs.mkdtemp(path.join(os.tmpdir(), "frame-config-test-"));
 }
 
 async function writeConfig(dir: string, body: string): Promise<void> {

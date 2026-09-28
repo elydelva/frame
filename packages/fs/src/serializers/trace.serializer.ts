@@ -1,4 +1,4 @@
-import type { Trace } from "@roadkit/core";
+import type { Trace } from "@frame/core";
 import { stringifyFrontmatter } from "../parsers/frontmatter.parser.js";
 
 export function serializeTrace(trace: Trace): string {

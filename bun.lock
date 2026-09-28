@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "adrkit-monorepo",
+      "name": "adframe-monorepo",
       "devDependencies": {
         "@biomejs/biome": "catalog:",
         "bun-types": "catalog:",
@@ -13,17 +13,36 @@
       },
     },
     "packages/core": {
-      "name": "@roadkit/core",
+      "name": "@frame/core",
       "version": "0.0.0",
       "devDependencies": {
         "typescript": "catalog:",
       },
     },
+    "packages/frame": {
+      "name": "frame",
+      "version": "0.1.1",
+      "bin": {
+        "frame": "./dist/index.js",
+      },
+      "dependencies": {
+        "@frame/core": "workspace:*",
+        "@frame/fs": "workspace:*",
+        "@frame/git": "workspace:*",
+        "@frame/lint": "workspace:*",
+        "@frame/sync": "workspace:*",
+        "@frame/tui": "workspace:*",
+        "commander": "catalog:",
+      },
+      "devDependencies": {
+        "typescript": "catalog:",
+      },
+    },
     "packages/fs": {
-      "name": "@roadkit/fs",
+      "name": "@frame/fs",
       "version": "0.0.0",
       "dependencies": {
-        "@roadkit/core": "workspace:*",
+        "@frame/core": "workspace:*",
         "gray-matter": "catalog:",
         "js-yaml": "catalog:",
       },
@@ -33,61 +52,42 @@
       },
     },
     "packages/git": {
-      "name": "@roadkit/git",
+      "name": "@frame/git",
       "version": "0.0.0",
       "dependencies": {
-        "@roadkit/core": "workspace:*",
+        "@frame/core": "workspace:*",
       },
       "devDependencies": {
         "typescript": "catalog:",
       },
     },
     "packages/lint": {
-      "name": "@roadkit/lint",
+      "name": "@frame/lint",
       "version": "0.0.0",
       "dependencies": {
-        "@roadkit/core": "workspace:*",
-      },
-      "devDependencies": {
-        "typescript": "catalog:",
-      },
-    },
-    "packages/roadkit": {
-      "name": "roadkit",
-      "version": "0.1.1",
-      "bin": {
-        "rkit": "./dist/index.js",
-      },
-      "dependencies": {
-        "@roadkit/core": "workspace:*",
-        "@roadkit/fs": "workspace:*",
-        "@roadkit/git": "workspace:*",
-        "@roadkit/lint": "workspace:*",
-        "@roadkit/sync": "workspace:*",
-        "@roadkit/tui": "workspace:*",
-        "commander": "catalog:",
+        "@frame/core": "workspace:*",
       },
       "devDependencies": {
         "typescript": "catalog:",
       },
     },
     "packages/sync": {
-      "name": "@roadkit/sync",
+      "name": "@frame/sync",
       "version": "0.0.0",
       "dependencies": {
-        "@roadkit/core": "workspace:*",
-        "@roadkit/fs": "workspace:*",
-        "@roadkit/git": "workspace:*",
+        "@frame/core": "workspace:*",
+        "@frame/fs": "workspace:*",
+        "@frame/git": "workspace:*",
       },
       "devDependencies": {
         "typescript": "catalog:",
       },
     },
     "packages/tui": {
-      "name": "@roadkit/tui",
+      "name": "@frame/tui",
       "version": "0.0.0",
       "dependencies": {
-        "@roadkit/core": "workspace:*",
+        "@frame/core": "workspace:*",
         "ink": "catalog:",
         "react": "catalog:",
       },
@@ -134,17 +134,17 @@
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@1.9.4", "", { "os": "win32", "cpu": "x64" }, "sha512-8Y5wMhVIPaWe6jw2H+KlEm4wP/f7EW3810ZLmDlrEEy5KvBsb9ECEfu/kMWD484ijfQ8+nIi0giMgu9g1UAuuA=="],
 
-    "@roadkit/core": ["@roadkit/core@workspace:packages/core"],
+    "@frame/core": ["@frame/core@workspace:packages/core"],
 
-    "@roadkit/fs": ["@roadkit/fs@workspace:packages/fs"],
+    "@frame/fs": ["@frame/fs@workspace:packages/fs"],
 
-    "@roadkit/git": ["@roadkit/git@workspace:packages/git"],
+    "@frame/git": ["@frame/git@workspace:packages/git"],
 
-    "@roadkit/lint": ["@roadkit/lint@workspace:packages/lint"],
+    "@frame/lint": ["@frame/lint@workspace:packages/lint"],
 
-    "@roadkit/sync": ["@roadkit/sync@workspace:packages/sync"],
+    "@frame/sync": ["@frame/sync@workspace:packages/sync"],
 
-    "@roadkit/tui": ["@roadkit/tui@workspace:packages/tui"],
+    "@frame/tui": ["@frame/tui@workspace:packages/tui"],
 
     "@types/js-yaml": ["@types/js-yaml@4.0.9", "", {}, "sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg=="],
 
@@ -207,6 +207,8 @@
     "extend-shallow": ["extend-shallow@2.0.1", "", { "dependencies": { "is-extendable": "^0.1.0" } }, "sha512-zCnTtlxNoAiDc3gqY2aYAWFx7XWWiasuF2K8Me5WbN8otHKTUKBwjPtNpRs/rbUZm7KxWAaNj7P1a/p52GbVug=="],
 
     "fill-range": ["fill-range@7.1.1", "", { "dependencies": { "to-regex-range": "^5.0.1" } }, "sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg=="],
+
+    "frame": ["frame@workspace:packages/frame"],
 
     "get-east-asian-width": ["get-east-asian-width@1.5.0", "", {}, "sha512-CQ+bEO+Tva/qlmw24dCejulK5pMzVnUOFOijVogd3KQs07HnRIgp8TGipvCCRT06xeYEbpbgwaCxglFyiuIcmA=="],
 
@@ -279,8 +281,6 @@
     "restore-cursor": ["restore-cursor@4.0.0", "", { "dependencies": { "onetime": "^5.1.0", "signal-exit": "^3.0.2" } }, "sha512-I9fPXU9geO9bHOt9pHHOhOkYerIMsmVaWB0rA2AI9ERh/+x/i7MV5HKBNrg+ljO5eoPVgCcnFuRjJ9uH6I/3eg=="],
 
     "rfdc": ["rfdc@1.4.1", "", {}, "sha512-q1b3N5QkRUWUl7iyylaaj3kOpIT0N2i9MqIEQXP73GVsN9cw3fdx8X63cEmWhJGi2PPCF23Ijp7ktmd39rawIA=="],
-
-    "roadkit": ["roadkit@workspace:packages/roadkit"],
 
     "scheduler": ["scheduler@0.23.2", "", { "dependencies": { "loose-envify": "^1.1.0" } }, "sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ=="],
 

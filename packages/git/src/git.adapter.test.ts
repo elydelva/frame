@@ -18,7 +18,7 @@ describe("GitAdapter", () => {
     });
 
     it("throws GitCommandError when path does not exist", async () => {
-      await expect(adapter.stage(["/nonexistent-path-roadkit-test"])).rejects.toBeInstanceOf(
+      await expect(adapter.stage(["/nonexistent-path-frame-test"])).rejects.toBeInstanceOf(
         GitCommandError
       );
     });

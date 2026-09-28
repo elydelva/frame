@@ -1,4 +1,4 @@
-import type { Milestone } from "@roadkit/core";
+import type { Milestone } from "@frame/core";
 import { stringifyFrontmatter } from "../parsers/frontmatter.parser.js";
 
 export function serializeMilestone(milestone: Milestone): string {

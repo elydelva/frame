@@ -20,13 +20,13 @@
     "packages/lint": { "release-type": "node", "component": "lint" },
     "packages/tui": { "release-type": "node", "component": "tui" },
     "packages/sync": { "release-type": "node", "component": "sync" },
-    "packages/roadkit": { "release-type": "node", "component": "roadkit" }
+    "packages/frame": { "release-type": "node", "component": "frame" }
   },
   "plugins": [
     {
       "type": "linked-versions",
-      "groupName": "roadkit",
-      "components": ["core", "fs", "git", "lint", "tui", "sync", "roadkit"]
+      "groupName": "frame",
+      "components": ["core", "fs", "git", "lint", "tui", "sync", "frame"]
     }
   ]
 }

@@ -1,4 +1,4 @@
-import type { Issue, Milestone, Project, Spec, Trace } from "@roadkit/core";
+import type { Issue, Milestone, Project, Spec, Trace } from "@frame/core";
 import { parseIssue } from "../parsers/issue.parser.js";
 import { parseMilestone } from "../parsers/milestone.parser.js";
 import { parseProject } from "../parsers/project.parser.js";

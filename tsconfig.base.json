@@ -18,12 +18,12 @@
     "noEmit": false,
     "types": ["bun-types"],
     "paths": {
-      "@roadkit/core": ["./packages/core/src/index.ts"],
-      "@roadkit/fs": ["./packages/fs/src/index.ts"],
-      "@roadkit/git": ["./packages/git/src/index.ts"],
-      "@roadkit/lint": ["./packages/lint/src/index.ts"],
-      "@roadkit/tui": ["./packages/tui/src/index.ts"],
-      "@roadkit/sync": ["./packages/sync/src/index.ts"]
+      "@frame/core": ["./packages/core/src/index.ts"],
+      "@frame/fs": ["./packages/fs/src/index.ts"],
+      "@frame/git": ["./packages/git/src/index.ts"],
+      "@frame/lint": ["./packages/lint/src/index.ts"],
+      "@frame/tui": ["./packages/tui/src/index.ts"],
+      "@frame/sync": ["./packages/sync/src/index.ts"]
     }
   },
   "include": ["packages/*/src"],

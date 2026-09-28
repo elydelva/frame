@@ -7,7 +7,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 ```bash
 bun install          # Install dependencies
 bun run build        # Build all packages
-bun run build:bin    # Compile standalone rkit binary
+bun run build:bin    # Compile standalone frame binary
 bun test             # Run all tests
 bun test --watch     # Watch mode
 bun run typecheck    # TypeScript strict check (no emit)

@@ -1,5 +1,5 @@
-import type { Trace, TraceEvent } from "@roadkit/core";
-import { IssueId, ProjectId, SpecId, TraceId } from "@roadkit/core";
+import type { Trace, TraceEvent } from "@frame/core";
+import { IssueId, ProjectId, SpecId, TraceId } from "@frame/core";
 import { toDate, toEnumValue, toIdOrNull, toStringOrNull } from "./coercers.js";
 import { parseFrontmatter } from "./frontmatter.parser.js";
 

@@ -1,4 +1,4 @@
-import type { Project } from "@roadkit/core";
+import type { Project } from "@frame/core";
 import { stringifyFrontmatter } from "../parsers/frontmatter.parser.js";
 
 export function serializeProject(project: Project): string {

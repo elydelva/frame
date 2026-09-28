@@ -1,8 +1,8 @@
 {
-  "name": "@roadkit/fs",
+  "name": "@frame/fs",
   "version": "0.0.0",
   "private": true,
-  "description": "roadkit filesystem adapter \u2014 IRealmRepository implementation",
+  "description": "frame filesystem adapter \u2014 IRealmRepository implementation",
   "type": "module",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist && rm -f tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@roadkit/core": "workspace:*",
+    "@frame/core": "workspace:*",
     "gray-matter": "catalog:",
     "js-yaml": "catalog:"
   },

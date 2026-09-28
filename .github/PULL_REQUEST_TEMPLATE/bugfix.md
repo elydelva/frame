@@ -28,7 +28,7 @@ Closes #<!-- issue number -->
 - [ ] A non-regression test was added (or justify its absence)
 - [ ] Type check passes (`bun run typecheck`)
 - [ ] Lint passes (`bun run lint`)
-- [ ] Issue reaches `completed` within this PR (`.roadkit/` state included) — folded into the work commit or a separate one
+- [ ] Issue reaches `completed` within this PR (`.frame/` state included) — folded into the work commit or a separate one
 
 ## Review notes
 

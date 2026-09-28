@@ -1,5 +1,5 @@
-import type { Issue, IssueStatus } from "@roadkit/core";
-import { IssueId, MilestoneId, ProjectId } from "@roadkit/core";
+import type { Issue, IssueStatus } from "@frame/core";
+import { IssueId, MilestoneId, ProjectId } from "@frame/core";
 import {
   toDate,
   toDateOrNull,

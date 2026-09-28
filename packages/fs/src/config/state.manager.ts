@@ -1,10 +1,10 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import type { CounterKey, RealmState } from "@roadkit/core";
-import { ROADKIT_DIR, STATE_FILE } from "../constants.js";
+import type { CounterKey, RealmState } from "@frame/core";
+import { FRAME_DIR, STATE_FILE } from "../constants.js";
 
 function stateFilePath(realmRoot: string): string {
-  return path.join(realmRoot, ROADKIT_DIR, STATE_FILE);
+  return path.join(realmRoot, FRAME_DIR, STATE_FILE);
 }
 
 async function readStateRaw(realmRoot: string): Promise<Record<string, number>> {

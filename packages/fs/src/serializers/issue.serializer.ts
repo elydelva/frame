@@ -1,4 +1,4 @@
-import type { Issue } from "@roadkit/core";
+import type { Issue } from "@frame/core";
 import { stringifyFrontmatter } from "../parsers/frontmatter.parser.js";
 
 export function serializeIssue(issue: Issue): string {

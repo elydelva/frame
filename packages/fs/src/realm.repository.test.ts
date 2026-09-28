@@ -13,12 +13,12 @@ import {
   SpecId,
   Trace,
   TraceId,
-} from "@roadkit/core";
-import { ROADKIT_DIR } from "./constants.js";
+} from "@frame/core";
+import { FRAME_DIR } from "./constants.js";
 import { FsRealmRepository } from "./realm.repository.js";
 
 async function mkTempDir(): Promise<string> {
-  return fs.mkdtemp(path.join(os.tmpdir(), "roadkit-test-"));
+  return fs.mkdtemp(path.join(os.tmpdir(), "frame-test-"));
 }
 
 function makeProject(id = "PROJ-0001", title = "My Project"): Project {
@@ -53,7 +53,7 @@ describe("FsRealmRepository", () => {
 
     it("writes the project file with a slugged dir but un-slugged filename", async () => {
       await repo.saveProject(makeProject("PROJ-0001", "Hello World!"));
-      const projectsRoot = path.join(tempDir, ROADKIT_DIR, "projects");
+      const projectsRoot = path.join(tempDir, FRAME_DIR, "projects");
       const dirs = await fs.readdir(projectsRoot);
       expect(dirs).toContain("PROJ-0001-hello-world");
       const files = await fs.readdir(path.join(projectsRoot, "PROJ-0001-hello-world"));
@@ -64,7 +64,7 @@ describe("FsRealmRepository", () => {
       const project = makeProject("PROJ-0042", "Rename Me");
       await repo.saveProject(project);
       // Rename the dir to a different slug — id still resolves.
-      const projectsRoot = path.join(tempDir, ROADKIT_DIR, "projects");
+      const projectsRoot = path.join(tempDir, FRAME_DIR, "projects");
       await fs.rename(
         path.join(projectsRoot, "PROJ-0042-rename-me"),
         path.join(projectsRoot, "PROJ-0042-something-else")
@@ -76,7 +76,7 @@ describe("FsRealmRepository", () => {
     it("re-saving reuses the existing directory", async () => {
       await repo.saveProject(makeProject("PROJ-0001", "Original Title"));
       await repo.saveProject({ ...makeProject("PROJ-0001", "Original Title"), title: "Updated" });
-      const projectsRoot = path.join(tempDir, ROADKIT_DIR, "projects");
+      const projectsRoot = path.join(tempDir, FRAME_DIR, "projects");
       const dirs = await fs.readdir(projectsRoot);
       expect(dirs).toEqual(["PROJ-0001-original-title"]);
       const found = await repo.findProject(ProjectId.from("PROJ-0001"));
@@ -126,7 +126,7 @@ describe("FsRealmRepository", () => {
         author: "carol",
       });
       await repo.saveIssue(issue);
-      const issuesDir = path.join(tempDir, ROADKIT_DIR, "projects", "PROJ-0001-one", "issues");
+      const issuesDir = path.join(tempDir, FRAME_DIR, "projects", "PROJ-0001-one", "issues");
       const files = await fs.readdir(issuesDir);
       expect(files).toEqual(["ISSUE-0001-build-it.md"]);
       const found = await repo.findIssue(issue.id);
@@ -205,7 +205,7 @@ describe("FsRealmRepository", () => {
       await repo.saveIssue(issue);
       await repo.saveIssue({ ...issue, title: "New title" });
 
-      const issuesDir = path.join(tempDir, ROADKIT_DIR, "projects", "PROJ-0001-one", "issues");
+      const issuesDir = path.join(tempDir, FRAME_DIR, "projects", "PROJ-0001-one", "issues");
       const files = await fs.readdir(issuesDir);
       expect(files).toEqual(["ISSUE-0001-new-title.md"]);
       expect((await repo.findIssue(issue.id))?.title).toBe("New title");
@@ -221,7 +221,7 @@ describe("FsRealmRepository", () => {
       await repo.saveIssue(issue);
       await repo.deleteIssue(issue.id);
 
-      const issuesDir = path.join(tempDir, ROADKIT_DIR, "projects", "PROJ-0001-one", "issues");
+      const issuesDir = path.join(tempDir, FRAME_DIR, "projects", "PROJ-0001-one", "issues");
       expect(await fs.readdir(issuesDir)).toEqual([]);
       expect(await repo.findIssue(issue.id)).toBeNull();
     });
@@ -287,7 +287,7 @@ describe("FsRealmRepository", () => {
       expect(a.id.toString()).not.toBe(b.id.toString());
       await repo.appendTrace(a);
       await repo.appendTrace(b);
-      const tracesDir = path.join(tempDir, ROADKIT_DIR, "projects", "PROJ-0001-one", "traces");
+      const tracesDir = path.join(tempDir, FRAME_DIR, "projects", "PROJ-0001-one", "traces");
       const files = await fs.readdir(tracesDir);
       expect(files).toHaveLength(2);
     });

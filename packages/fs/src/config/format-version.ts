@@ -1,6 +1,6 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { REALM_MANIFEST_FILE, ROADKIT_DIR } from "../constants.js";
+import { FRAME_DIR, REALM_MANIFEST_FILE } from "../constants.js";
 
 export const CURRENT_REALM_FORMAT = 1;
 
@@ -19,7 +19,7 @@ export class RealmFormatError extends Error {
 }
 
 function manifestPath(realmRoot: string): string {
-  return path.join(realmRoot, ROADKIT_DIR, REALM_MANIFEST_FILE);
+  return path.join(realmRoot, FRAME_DIR, REALM_MANIFEST_FILE);
 }
 
 export async function readRealmFormat(realmRoot: string): Promise<number> {
@@ -62,7 +62,7 @@ export async function readRealmFormat(realmRoot: string): Promise<number> {
       "UNSUPPORTED_REALM_FORMAT",
       version,
       filePath,
-      `This realm uses format ${version}; this rkit supports format ${CURRENT_REALM_FORMAT}; install a compatible rkit version or migrate the realm`
+      `This realm uses format ${version}; this frame supports format ${CURRENT_REALM_FORMAT}; install a compatible frame version or migrate the realm`
     );
   }
 

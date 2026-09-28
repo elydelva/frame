@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
-      roadkit_version: ${{ steps.release.outputs['packages/roadkit--tag_name'] }}
+      frame_version: ${{ steps.release.outputs['packages/frame--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -52,8 +52,8 @@ jobs:
       - name: Compile binary
         run: bun run build:bin
 
-      - name: Publish roadkit to npm
+      - name: Publish frame to npm
         run: bun publish --access public
-        working-directory: packages/roadkit
+        working-directory: packages/frame
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

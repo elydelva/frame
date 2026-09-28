@@ -1,4 +1,4 @@
-import type { Spec } from "@roadkit/core";
+import type { Spec } from "@frame/core";
 import { stringifyFrontmatter } from "../parsers/frontmatter.parser.js";
 
 export function serializeSpec(spec: Spec): string {

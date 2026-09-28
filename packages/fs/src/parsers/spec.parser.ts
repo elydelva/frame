@@ -1,5 +1,5 @@
-import type { Spec, SpecStatus } from "@roadkit/core";
-import { ProjectId, SpecId } from "@roadkit/core";
+import type { Spec, SpecStatus } from "@frame/core";
+import { ProjectId, SpecId } from "@frame/core";
 import {
   toDate,
   toEnumValue,

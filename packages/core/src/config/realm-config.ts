@@ -7,7 +7,7 @@
  * added without breaking older files.
  *
  * This module is pure: types, the `DEFAULT_CONFIG`, and stateless helpers.
- * All I/O (reading/writing the YAML file) lives in `@roadkit/fs`.
+ * All I/O (reading/writing the YAML file) lives in `@frame/fs`.
  */
 
 export type EstimationScale = "none" | "linear" | "fibonacci" | "tshirt" | "exponential" | "hours";

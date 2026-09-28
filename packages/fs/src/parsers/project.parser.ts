@@ -1,5 +1,5 @@
-import type { Project, ProjectStatus } from "@roadkit/core";
-import { ProjectId } from "@roadkit/core";
+import type { Project, ProjectStatus } from "@frame/core";
+import { ProjectId } from "@frame/core";
 import { toDate, toEnumValue, toStringArray } from "./coercers.js";
 import { parseFrontmatter } from "./frontmatter.parser.js";
 

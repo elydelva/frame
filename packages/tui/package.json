@@ -1,8 +1,8 @@
 {
-  "name": "@roadkit/tui",
+  "name": "@frame/tui",
   "version": "0.0.0",
   "private": true,
-  "description": "roadkit terminal interface \u2014 Ink components",
+  "description": "frame terminal interface \u2014 Ink components",
   "type": "module",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -21,7 +21,7 @@
     "clean": "rm -rf dist && rm -f tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@roadkit/core": "workspace:*",
+    "@frame/core": "workspace:*",
     "ink": "catalog:",
     "react": "catalog:"
   },

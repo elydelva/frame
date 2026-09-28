@@ -12,14 +12,12 @@ describe("GitWorktreeAdapter", () => {
   let adapter: GitWorktreeAdapter;
 
   beforeEach(async () => {
-    tempRoot = await fs.realpath(
-      await fs.mkdtemp(path.join(os.tmpdir(), "roadkit worktree test "))
-    );
+    tempRoot = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), "frame worktree test ")));
     repoRoot = path.join(tempRoot, "repo");
     await fs.mkdir(repoRoot);
     runGit(repoRoot, ["init", "--initial-branch=main"]);
-    runGit(repoRoot, ["config", "user.name", "Roadkit Test"]);
-    runGit(repoRoot, ["config", "user.email", "roadkit@example.test"]);
+    runGit(repoRoot, ["config", "user.name", "Frame Test"]);
+    runGit(repoRoot, ["config", "user.email", "frame@example.test"]);
     await fs.writeFile(path.join(repoRoot, "README.md"), "baseline\n", "utf-8");
     runGit(repoRoot, ["add", "README.md"]);
     runGit(repoRoot, ["commit", "-m", "initial"]);

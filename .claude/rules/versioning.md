@@ -2,13 +2,13 @@
 
 ## Commit conventions
 
-[Conventional Commits](https://www.conventionalcommits.org/). Scope = package name without `@roadkit/` (e.g. `core`, `fs`, `git`, `lint`, `tui`, `sync`). The CLI package `roadkit` uses the scope `cli`.
+[Conventional Commits](https://www.conventionalcommits.org/). Scope = package name without `@frame/` (e.g. `core`, `fs`, `git`, `lint`, `tui`, `sync`). The CLI package `frame` uses the scope `cli`.
 
 ```text
 <type>(<scope>): <description>
 ```
 
-Example: `feat(cli): add rkit history command`
+Example: `feat(cli): add frame history command`
 
 | Type | Changelog | Visible |
 |---|---|---|
@@ -25,13 +25,13 @@ Example: `feat(cli): add rkit history command`
 
 Breaking changes: `feat(auth)!:` or `BREAKING CHANGE:` footer → major bump.
 
-## Roadkit commit cadence
+## Frame commit cadence
 
-`rkit start` / `rkit complete` mutate `.roadkit/` files. Don't treat completing an issue as automatic — finishing the work ≠ validating the issue. Run `rkit complete <id>` only when asked or authorised to.
+`frame start` / `frame complete` mutate `.frame/` files. Don't treat completing an issue as automatic — finishing the work ≠ validating the issue. Run `frame complete <id>` only when asked or authorised to.
 
 When you do complete, where the `completed` state lands depends on the target:
 
-- **On `main`:** never make a standalone commit just to record completion. Run `rkit complete` *before* the commit so code + `.roadkit/` state land in one commit.
+- **On `main`:** never make a standalone commit just to record completion. Run `frame complete` *before* the commit so code + `.frame/` state land in one commit.
 - **On a branch / PR:** no strong opinion — fold `completed` into the final commit, or add a separate completion commit. Either is fine, as long as the issue reaches `completed` within the same PR that ships its code.
 
 ## Release flow

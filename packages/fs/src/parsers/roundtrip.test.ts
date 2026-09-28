@@ -10,7 +10,7 @@ import {
   SpecId,
   Trace,
   TraceId,
-} from "@roadkit/core";
+} from "@frame/core";
 import { serializeIssue } from "../serializers/issue.serializer.js";
 import { serializeMilestone } from "../serializers/milestone.serializer.js";
 import { serializeProject } from "../serializers/project.serializer.js";

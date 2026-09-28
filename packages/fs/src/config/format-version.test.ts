@@ -8,7 +8,7 @@ describe("realm format manifest", () => {
   let realmRoot: string;
 
   beforeEach(async () => {
-    realmRoot = await fs.mkdtemp(path.join(os.tmpdir(), "roadkit-format-test-"));
+    realmRoot = await fs.mkdtemp(path.join(os.tmpdir(), "frame-format-test-"));
   });
 
   afterEach(async () => {
@@ -17,14 +17,14 @@ describe("realm format manifest", () => {
 
   it("treats an absent manifest as legacy format 1 without writing one", async () => {
     expect(await readRealmFormat(realmRoot)).toBe(1);
-    await expect(fs.access(path.join(realmRoot, ".roadkit", "manifest.json"))).rejects.toThrow();
+    await expect(fs.access(path.join(realmRoot, ".frame", "manifest.json"))).rejects.toThrow();
   });
 
   it("reads and writes the explicit current format", async () => {
     await writeRealmFormat(realmRoot);
 
     expect(await readRealmFormat(realmRoot)).toBe(1);
-    expect(await fs.readFile(path.join(realmRoot, ".roadkit", "manifest.json"), "utf-8")).toBe(
+    expect(await fs.readFile(path.join(realmRoot, ".frame", "manifest.json"), "utf-8")).toBe(
       '{\n  "formatVersion": 1\n}\n'
     );
   });
@@ -62,7 +62,7 @@ describe("realm format manifest", () => {
   });
 
   async function writeManifest(content: string): Promise<void> {
-    const dir = path.join(realmRoot, ".roadkit");
+    const dir = path.join(realmRoot, ".frame");
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(path.join(dir, "manifest.json"), content, "utf-8");
   }

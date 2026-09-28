@@ -8,17 +8,17 @@
 
 ADRKit is a Bun monorepo. Bun operates at every level: workspace manager, runtime, test runner, bundler, and standalone binary compiler.
 
-The architecture follows the hexagonal model: a pure core with no external dependencies, surrounded by adapters that implement ports. The final binary (`adrkit`) is the only place where everything connects.
+The architecture follows the hexagonal model: a pure core with no external dependencies, surrounded by adapters that implement ports. The final binary (`adframe`) is the only place where everything connects.
 
 ```
 packages/
-├── core/           @adrkit/core       domain + ports + use cases
-├── fs/             @adrkit/fs         filesystem adapter
-├── git/            @adrkit/git        git adapter
-├── lint/           @adrkit/lint       validation engine
-├── tui/            @adrkit/tui        terminal interface (Ink)
-├── sync/           @adrkit/sync       external adapters (Linear, GitHub)
-└── adrkit/         adrkit             published binary — entry point + DI
+├── core/           @adframe/core       domain + ports + use cases
+├── fs/             @adframe/fs         filesystem adapter
+├── git/            @adframe/git        git adapter
+├── lint/           @adframe/lint       validation engine
+├── tui/            @adframe/tui        terminal interface (Ink)
+├── sync/           @adframe/sync       external adapters (Linear, GitHub)
+└── adframe/         adframe             published binary — entry point + DI
 ```
 
 ---
@@ -34,10 +34,10 @@ core
  ├── sync        (also depends on fs + git)
  └── tui
       ↑
-    adrkit       (depends on everything — the only one allowed to)
+    adframe       (depends on everything — the only one allowed to)
 ```
 
-`core` imports no other monorepo package. Adapters (`fs`, `git`, `sync`, `lint`) only import `core`. `tui` only imports `core`. `adrkit` is the only package that imports multiple packages — this is where DI wiring happens.
+`core` imports no other monorepo package. Adapters (`fs`, `git`, `sync`, `lint`) only import `core`. `tui` only imports `core`. `adframe` is the only package that imports multiple packages — this is where DI wiring happens.
 
 A violation of this rule is an architecture error. Eventually, a custom lint rule can enforce it in CI.
 
@@ -45,7 +45,7 @@ A violation of this rule is an architecture error. Eventually, a custom lint rul
 
 ## Packages
 
-### `@adrkit/core`
+### `@adframe/core`
 
 The domain core. No external dependencies except TypeScript types. Nothing related to files, git, or any framework.
 
@@ -109,9 +109,9 @@ export interface IRealmRepository {
 
 ---
 
-### `@adrkit/fs`
+### `@adframe/fs`
 
-Filesystem adapter. Implements `IRealmRepository`. Reads and writes `.md` files with YAML frontmatter. Parses `.adrconfig` and `.adrkit/.state`.
+Filesystem adapter. Implements `IRealmRepository`. Reads and writes `.md` files with YAML frontmatter. Parses `.adrconfig` and `.adframe/.state`.
 
 ```
 packages/fs/src/
@@ -126,7 +126,7 @@ packages/fs/src/
 │   └── trace.serializer.ts
 ├── config/
 │   ├── adrconfig.reader.ts      # reads + validates .adrconfig
-│   └── state.manager.ts         # reads/writes .adrkit/.state
+│   └── state.manager.ts         # reads/writes .adframe/.state
 ├── realm.repository.ts          # IRealmRepository implementation
 └── index.ts
 ```
@@ -137,25 +137,25 @@ packages/fs/src/
 {
   "gray-matter": "^4.x",     // parse YAML/Markdown frontmatter
   "js-yaml": "^4.x",         // YAML serialization
-  "@adrkit/core": "workspace:*"
+  "@adframe/core": "workspace:*"
 }
 ```
 
 **File naming convention**
 
-The ID format is configured in `.adrconfig` (`id_format`). `@adrkit/fs` reads this format and applies it when naming files and directories. IDs are always zero-padded according to the config (`ADR-%04d` → `ADR-0001`).
+The ID format is configured in `.adrconfig` (`id_format`). `@adframe/fs` reads this format and applies it when naming files and directories. IDs are always zero-padded according to the config (`ADR-%04d` → `ADR-0001`).
 
 ---
 
-### `@adrkit/git`
+### `@adframe/git`
 
 Git adapter. Implements `IGitAdapter`. All git operations go through `Bun.spawn` — no external git library in v1.
 
 ```
 packages/git/src/
-├── staging.ts          # git add on modified .adrkit/ files
-├── history.ts          # git log filtered on .adrkit/ → enriched traces
-├── merge-driver.ts     # max() logic for .adrkit/.state
+├── staging.ts          # git add on modified .adframe/ files
+├── history.ts          # git log filtered on .adframe/ → enriched traces
+├── merge-driver.ts     # max() logic for .adframe/.state
 ├── hooks/
 │   ├── generator.ts    # generates shell scripts for hooks
 │   ├── pre-commit.sh   # template
@@ -169,7 +169,7 @@ packages/git/src/
 
 ```json
 {
-  "@adrkit/core": "workspace:*"
+  "@adframe/core": "workspace:*"
 }
 ```
 
@@ -177,7 +177,7 @@ No `simple-git` or `isomorphic-git`. Operations are simple and `Bun.spawn` is su
 
 ---
 
-### `@adrkit/lint`
+### `@adframe/lint`
 
 Realm validation engine. Implements `ILinterAdapter`. Each lint rule is an independent module that exports a `check` function.
 
@@ -224,13 +224,13 @@ export interface LintResult {
 
 **Note on Rust**
 
-In v1, the linter is entirely TypeScript. The `ILinterAdapter` interface allows substituting a Rust implementation (subprocess) without modifying the upper layers. The Rust runner (`adrkit-lint`) would be called via `Bun.spawn` and its JSON output parsed by the adapter.
+In v1, the linter is entirely TypeScript. The `ILinterAdapter` interface allows substituting a Rust implementation (subprocess) without modifying the upper layers. The Rust runner (`adframe-lint`) would be called via `Bun.spawn` and its JSON output parsed by the adapter.
 
 ---
 
-### `@adrkit/tui`
+### `@adframe/tui`
 
-Terminal interface built with Ink (React for the terminal). Depends only on `@adrkit/core` — receives use cases via injection, does not know about adapters.
+Terminal interface built with Ink (React for the terminal). Depends only on `@adframe/core` — receives use cases via injection, does not know about adapters.
 
 ```
 packages/tui/src/
@@ -257,17 +257,17 @@ packages/tui/src/
 {
   "ink": "^5.x",
   "react": "^18.x",
-  "@adrkit/core": "workspace:*"
+  "@adframe/core": "workspace:*"
 }
 ```
 
 **File watching**
 
-`Bun.watch()` on `.adrkit/` triggers a re-render of the global state. Ink re-renders only the affected components.
+`Bun.watch()` on `.adframe/` triggers a re-render of the global state. Ink re-renders only the affected components.
 
 ---
 
-### `@adrkit/sync`
+### `@adframe/sync`
 
 External synchronization adapters. Implements `ISyncAdapter` for Linear and GitHub. Each adapter is an independent module within the package.
 
@@ -289,12 +289,12 @@ Adapters call external CLIs via `Bun.spawn`. No API keys stored in ADRKit.
 
 ---
 
-### `adrkit` (published binary)
+### `adframe` (published binary)
 
 Entry point. The only non-scoped package. Wires all packages via DI and exposes CLI commands. Compiled to a standalone binary with `bun build --compile`.
 
 ```
-packages/adrkit/src/
+packages/adframe/src/
 ├── commands/
 │   ├── new.ts
 │   ├── edit.ts
@@ -333,17 +333,17 @@ packages/adrkit/src/
 
 ```typescript
 // container.ts
-import { FSRealmRepository }   from '@adrkit/fs'
-import { GitAdapter }          from '@adrkit/git'
-import { LintAdapter }         from '@adrkit/lint'
-import { SyncRegistry }        from '@adrkit/sync'
-import { ADRConfig }           from '@adrkit/fs'
+import { FSRealmRepository }   from '@adframe/fs'
+import { GitAdapter }          from '@adframe/git'
+import { LintAdapter }         from '@adframe/lint'
+import { SyncRegistry }        from '@adframe/sync'
+import { ADRConfig }           from '@adframe/fs'
 import {
   CreateADRUseCase,
   CompleteTaskUseCase,
   GetNextUseCase,
   // ...
-} from '@adrkit/core'
+} from '@adframe/core'
 
 export function buildContainer(realmPath: string) {
   const config   = ADRConfig.load(realmPath)
@@ -368,19 +368,19 @@ export function buildContainer(realmPath: string) {
 **Binary build**
 
 ```bash
-bun build packages/adrkit/src/index.ts \
+bun build packages/adframe/src/index.ts \
   --compile \
-  --outfile dist/adrkit \
+  --outfile dist/adframe \
   --target bun
 ```
 
-The `dist/adrkit` binary is standalone — no Node, no Bun required on the target machine. This is the equivalent of `go build` for Go.
+The `dist/adframe` binary is standalone — no Node, no Bun required on the target machine. This is the equivalent of `go build` for Go.
 
 ---
 
 ## Command Flow
 
-Example: `adrkit task complete TASK-0041 --actor "agent:claude"`
+Example: `adframe task complete TASK-0041 --actor "agent:claude"`
 
 ```
 index.ts
@@ -388,11 +388,11 @@ index.ts
   → container.ts    instantiates dependencies
   → commands/task/complete.ts
       → CompleteTaskUseCase.execute({ id: TASK-0041, actor: ... })
-          → IRealmRepository.findTask(TASK-0041)      # @adrkit/fs reads file
-          → StateMachineService.validateTransition()  # @adrkit/core validates
-          → IRealmRepository.saveTask(updated)        # @adrkit/fs writes
-          → IRealmRepository.appendTrace(trace)       # @adrkit/fs creates trace file
-          → IGitAdapter.stage([taskFile, traceFile])  # @adrkit/git runs git add
+          → IRealmRepository.findTask(TASK-0041)      # @adframe/fs reads file
+          → StateMachineService.validateTransition()  # @adframe/core validates
+          → IRealmRepository.saveTask(updated)        # @adframe/fs writes
+          → IRealmRepository.appendTrace(trace)       # @adframe/fs creates trace file
+          → IGitAdapter.stage([taskFile, traceFile])  # @adframe/git runs git add
       → stdout: "✓ TASK-0041 completed"
 ```
 
@@ -406,16 +406,16 @@ No layer knows what is happening in neighboring layers. `CompleteTaskUseCase` do
 
 ```json
 {
-  "name": "adrkit-monorepo",
+  "name": "adframe-monorepo",
   "private": true,
   "workspaces": ["packages/*"],
   "scripts": {
     "build":      "bun run --filter '*' build",
-    "build:bin":  "bun build packages/adrkit/src/index.ts --compile --outfile dist/adrkit",
+    "build:bin":  "bun build packages/adframe/src/index.ts --compile --outfile dist/adframe",
     "test":       "bun test --coverage",
     "test:watch": "bun test --watch",
     "lint:ts":    "tsc --noEmit --project tsconfig.base.json",
-    "dev":        "bun run --filter 'adrkit' dev",
+    "dev":        "bun run --filter 'adframe' dev",
     "clean":      "bun run --filter '*' clean"
   }
 }
@@ -447,12 +447,12 @@ sourcemap = "external"
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,
     "paths": {
-      "@adrkit/core":   ["./packages/core/src/index.ts"],
-      "@adrkit/fs":     ["./packages/fs/src/index.ts"],
-      "@adrkit/git":    ["./packages/git/src/index.ts"],
-      "@adrkit/lint":   ["./packages/lint/src/index.ts"],
-      "@adrkit/tui":    ["./packages/tui/src/index.ts"],
-      "@adrkit/sync":   ["./packages/sync/src/index.ts"]
+      "@adframe/core":   ["./packages/core/src/index.ts"],
+      "@adframe/fs":     ["./packages/fs/src/index.ts"],
+      "@adframe/git":    ["./packages/git/src/index.ts"],
+      "@adframe/lint":   ["./packages/lint/src/index.ts"],
+      "@adframe/tui":    ["./packages/tui/src/index.ts"],
+      "@adframe/sync":   ["./packages/sync/src/index.ts"]
     }
   }
 }
@@ -472,17 +472,17 @@ Each package has its own tests. `bun test` at the root runs all of them.
 | `lint` | Per-rule tests with fixture realms |
 | `tui` | Ink component tests with `ink-testing-library` |
 | `sync` | Integration tests with `Bun.spawn` mocks |
-| `adrkit` | End-to-end tests on a complete realm in `/tmp` |
+| `adframe` | End-to-end tests on a complete realm in `/tmp` |
 
 ---
 
 ## Distribution
 
 ```
-npm publish packages/adrkit    # publishes the compiled binary
+npm publish packages/adframe    # publishes the compiled binary
 ```
 
-The `adrkit` package is the only one published publicly. The `@adrkit/*` packages are private in v1 — they live in the monorepo. If extension or plugin needs emerge in v2, some may be published separately.
+The `adframe` package is the only one published publicly. The `@adframe/*` packages are private in v1 — they live in the monorepo. If extension or plugin needs emerge in v2, some may be published separately.
 
 ---
 

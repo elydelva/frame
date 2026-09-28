@@ -5,7 +5,7 @@ pattern='^(feat|fix|docs|chore|refactor|perf|test|ci|revert|deps)(\([a-z0-9/-]+\
 
 if ! echo "$commit_msg" | grep -qE "$pattern"; then
   echo ""
-  echo "[roadkit] Commit message does not follow Conventional Commits format."
+  echo "[frame] Commit message does not follow Conventional Commits format."
   echo ""
   echo "  Expected: type(scope): description"
   echo "  Examples: feat(core): add state machine"

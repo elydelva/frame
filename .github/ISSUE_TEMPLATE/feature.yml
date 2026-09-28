@@ -45,5 +45,5 @@ body:
       label: Acceptance criteria
       description: How do we know this is done?
       placeholder: |
-        - `rkit X --flag` returns Y
+        - `frame X --flag` returns Y
         - Trace file is created with event Z

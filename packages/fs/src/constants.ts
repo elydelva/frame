@@ -1,7 +1,7 @@
-export const ROADKIT_DIR = ".roadkit";
+export const FRAME_DIR = ".frame";
 export const STATE_FILE = ".state";
 export const REALM_MANIFEST_FILE = "manifest.json";
-export const CONFIG_FILE = "roadfig.yml";
+export const CONFIG_FILE = ".frameconfig";
 export const PROJECTS_DIR = "projects";
 export const SPECS_DIR = "specs";
 export const MILESTONES_DIR = "milestones";

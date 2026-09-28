@@ -1,12 +1,12 @@
 {
-  "name": "roadkit-monorepo",
+  "name": "frame-monorepo",
   "private": true,
   "version": "0.0.0",
   "description": "Decision-first, agent-native project management system for git repositories",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elydelva/roadkit.git"
+    "url": "git+https://github.com/elydelva/frame.git"
   },
   "packageManager": "bun@1.3.11",
   "workspaces": ["packages/*"],
@@ -27,8 +27,8 @@
     "commander": "^13.0.0"
   },
   "scripts": {
-    "build": "bun run --filter '@roadkit/core' build && bun run --filter './packages/fs' build && bun run --filter './packages/git' build && bun run --filter './packages/lint' build && bun run --filter './packages/tui' build && bun run --filter './packages/sync' build && bun run --filter './packages/roadkit' build",
-    "build:bin": "bun build packages/roadkit/src/index.ts --compile --outfile dist/rkit --target bun",
+    "build": "bun run --filter '@frame/core' build && bun run --filter './packages/fs' build && bun run --filter './packages/git' build && bun run --filter './packages/lint' build && bun run --filter './packages/tui' build && bun run --filter './packages/sync' build && bun run --filter './packages/frame' build",
+    "build:bin": "bun build packages/frame/src/index.ts --compile --outfile dist/frame --target bun",
     "test": "bun test --coverage",
     "test:watch": "bun test --watch",
     "lint": "biome lint .",

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { IGitAdapter } from "@roadkit/core";
+import type { IGitAdapter } from "@frame/core";
 import { GitCommandError } from "./errors/index.js";
 
 function run(args: string[], cwd?: string): Promise<{ exitCode: number; stderr: string }> {
@@ -17,7 +17,7 @@ export class GitAdapter implements IGitAdapter {
   /**
    * @param cwd Working directory git runs in — the realm root. Without it git
    * resolves the repository from `process.cwd()`, which breaks staging whenever
-   * the realm (ROADKIT_ROOT) lives outside the current working directory.
+   * the realm (FRAME_ROOT) lives outside the current working directory.
    */
   constructor(private readonly cwd?: string) {}
 

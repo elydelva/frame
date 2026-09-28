@@ -1,5 +1,5 @@
-import type { Milestone, MilestoneStatus } from "@roadkit/core";
-import { MilestoneId, ProjectId } from "@roadkit/core";
+import type { Milestone, MilestoneStatus } from "@frame/core";
+import { MilestoneId, ProjectId } from "@frame/core";
 import { toDate, toDateOrNull, toEnumValue, toNumber } from "./coercers.js";
 import { parseFrontmatter } from "./frontmatter.parser.js";
 
