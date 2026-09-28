@@ -19,25 +19,31 @@ describe("CLI realm format compatibility", () => {
   });
 
   it.each([
-    ["format 2", '{"formatVersion":2}', "UNSUPPORTED_REALM_FORMAT"],
-    ["malformed manifest", "{", "INVALID_REALM_MANIFEST"],
-  ])("rejects %s before read or mutation and emits JSON errors", async (_label, manifest, code) => {
-    const config = "version: 1\npriority:\n  default: low\n";
-    await fs.writeFile(path.join(realmRoot, "roadfig.yml"), config, "utf-8");
-    await fs.writeFile(path.join(realmRoot, ".roadkit", "manifest.json"), manifest, "utf-8");
+    ["format 2", '{"formatVersion":2}', "UNSUPPORTED_REALM_FORMAT", "format 2"],
+    ["malformed manifest", "{", "INVALID_REALM_MANIFEST", "not valid JSON"],
+  ])(
+    "rejects %s before read or mutation and emits JSON errors",
+    async (_label, manifest, code, diagnostic) => {
+      const config = "version: 1\npriority:\n  default: low\n";
+      await fs.writeFile(path.join(realmRoot, "roadfig.yml"), config, "utf-8");
+      await fs.writeFile(path.join(realmRoot, ".roadkit", "manifest.json"), manifest, "utf-8");
 
-    for (const args of [
-      ["next", "--json"],
-      ["project", "new", "--title", "Must not be written", "--json"],
-    ]) {
-      const result = runCLI(args);
-      expect(result.status).toBe(1);
-      expect(result.stdout).toBe("");
-      expect(JSON.parse(result.stderr).error.code).toBe(code);
-      expect(await fs.readFile(path.join(realmRoot, "roadfig.yml"), "utf-8")).toBe(config);
-      expect(await fs.readdir(path.join(realmRoot, ".roadkit"))).toEqual(["manifest.json"]);
+      for (const args of [
+        ["next", "--json"],
+        ["project", "new", "--title", "Must not be written", "--json"],
+      ]) {
+        const result = runCLI(args);
+        expect(result.status).toBe(1);
+        expect(result.stdout).toBe("");
+        const error = JSON.parse(result.stderr).error;
+        expect(error.code).toBe(code);
+        expect(error.message).toContain(diagnostic);
+        expect(error.message).toContain("Supported realm format: 1");
+        expect(await fs.readFile(path.join(realmRoot, "roadfig.yml"), "utf-8")).toBe(config);
+        expect(await fs.readdir(path.join(realmRoot, ".roadkit"))).toEqual(["manifest.json"]);
+      }
     }
-  });
+  );
 
   it("allows a legacy manifest-free realm to read and mutate as format 1", async () => {
     const result = runCLI(["project", "new", "--title", "Legacy project", "--json"]);

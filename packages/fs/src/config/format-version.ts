@@ -62,7 +62,7 @@ export async function readRealmFormat(realmRoot: string): Promise<number> {
       "UNSUPPORTED_REALM_FORMAT",
       version,
       filePath,
-      `This rkit supports format ${CURRENT_REALM_FORMAT}; install a compatible rkit version or migrate the realm`
+      `This realm uses format ${version}; this rkit supports format ${CURRENT_REALM_FORMAT}; install a compatible rkit version or migrate the realm`
     );
   }
 
