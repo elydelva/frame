@@ -1,10 +1,13 @@
 {
   "name": "@frame/fs",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.1",
   "description": "frame filesystem adapter \u2014 IRealmRepository implementation",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elydelva/frame.git"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,6 +17,10 @@
       "import": "./dist/index.js"
     }
   },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
@@ -21,7 +28,7 @@
     "clean": "rm -rf dist && rm -f tsconfig.tsbuildinfo"
   },
   "dependencies": {
-    "@frame/core": "workspace:*",
+    "@frame/core": "0.1.1",
     "gray-matter": "catalog:",
     "js-yaml": "catalog:"
   },
