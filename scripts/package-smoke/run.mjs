@@ -15,7 +15,16 @@ try {
   );
   const install = spawnSync(
     "npm",
-    ["install", "--prefix", root, "--no-save", "--no-package-lock", "--no-audit", "--no-fund", ...artifacts.slice(0, 3)],
+    [
+      "install",
+      "--prefix",
+      root,
+      "--no-save",
+      "--no-package-lock",
+      "--no-audit",
+      "--no-fund",
+      ...artifacts.slice(0, 3),
+    ],
     { encoding: "utf8" }
   );
   assert.equal(install.status, 0, install.stderr || install.stdout);
@@ -33,12 +42,28 @@ try {
   );
   const typecheck = spawnSync(
     path.join(root, "node_modules", ".bin", "tsc"),
-    ["--noEmit", "--module", "NodeNext", "--moduleResolution", "NodeNext", "--target", "ES2022", "--strict", "--skipLibCheck", "sdk-consumer.ts"],
+    [
+      "--noEmit",
+      "--module",
+      "NodeNext",
+      "--moduleResolution",
+      "NodeNext",
+      "--target",
+      "ES2022",
+      "--strict",
+      "--skipLibCheck",
+      "sdk-consumer.ts",
+    ],
     { cwd: root, encoding: "utf8" }
   );
   assert.equal(typecheck.status, 0, typecheck.stderr || typecheck.stdout);
 
-  const sdkCheck = spawnSync("node", ["--input-type=module", "-e", `
+  const sdkCheck = spawnSync(
+    "node",
+    [
+      "--input-type=module",
+      "-e",
+      `
     import assert from 'node:assert/strict';
     import { mkdtemp, rm } from 'node:fs/promises';
     import os from 'node:os';
@@ -50,13 +75,25 @@ try {
       const frame = new Frame({ root });
       assert.deepEqual(await frame.projects.list(), []);
     } finally { await rm(root, { recursive: true, force: true }); }
-  `], { cwd: root, encoding: "utf8" });
+  `,
+    ],
+    { cwd: root, encoding: "utf8" }
+  );
   assert.equal(sdkCheck.status, 0, sdkCheck.stderr || sdkCheck.stdout);
 
   await writeFile(path.join(cliRoot, "package.json"), JSON.stringify({ private: true }));
   const cliInstall = spawnSync(
     "npm",
-    ["install", "--prefix", cliRoot, "--no-save", "--no-package-lock", "--no-audit", "--no-fund", artifacts[3]],
+    [
+      "install",
+      "--prefix",
+      cliRoot,
+      "--no-save",
+      "--no-package-lock",
+      "--no-audit",
+      "--no-fund",
+      artifacts[3],
+    ],
     { encoding: "utf8" }
   );
   assert.equal(cliInstall.status, 0, cliInstall.stderr || cliInstall.stdout);

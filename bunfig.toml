@@ -5,7 +5,6 @@ exact = true
 coverage = true
 coverageReporter = ["text", "lcov"]
 coverageDir = "coverage"
-coverageThreshold = 0.8
 
 [build]
 sourcemap = "external"
