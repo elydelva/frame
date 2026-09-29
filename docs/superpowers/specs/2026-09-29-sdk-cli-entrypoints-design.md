@@ -1,6 +1,6 @@
 # SDK and CLI entry points
 
-**Status:** Amended; awaiting user review
+**Status:** Approved design; implementation plan in progress
 **Date:** 2026-09-29
 
 ## Problem statement
