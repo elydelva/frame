@@ -190,6 +190,9 @@ The CLI remains the second supported entry point: install `frame` to get
 terminal output, Git/worktree coordination, structural linting, and
 `doctor --fix`. Linting is intentionally not part of the SDK.
 
+See the [SDK usage guide](docs/sdk.md) for initialization, reads, mutations,
+configuration, custom repositories, and error handling.
+
 ---
 
 ## Configuration — `.frameconfig`
