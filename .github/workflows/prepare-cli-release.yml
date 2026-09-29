@@ -1,0 +1,59 @@
+name: Prepare frame CLI release PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: CLI version to publish (major.minor.patch)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2
+        with:
+          bun-version-file: .bun-version
+      - name: Check release does not exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if gh release view "frame-v${VERSION}" >/dev/null 2>&1; then
+            echo "frame-v${VERSION} has already been published" >&2
+            exit 1
+          fi
+      - name: Prepare version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          bun scripts/prepare-cli-release.mjs "$VERSION"
+          bun install --frozen-lockfile
+          bun install
+          test "$(bun apps/cli/src/index.ts --version)" = "$VERSION"
+      - name: Open release PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          branch="cli-release/frame-v${VERSION}"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1; then
+            echo "Branch $branch already exists" >&2
+            exit 1
+          fi
+          git switch -c "$branch"
+          git add apps/cli/package.json apps/cli/src/cli.ts bun.lock
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "chore(cli): prepare frame ${VERSION} release"
+          git push origin "$branch"
+          gh pr create --base release --head "$branch" --title "chore(cli): release frame ${VERSION}" --body "Merge into release to publish frame-v${VERSION} and update the Homebrew tap. CI must pass before merging."
+          gh workflow run ci.yml --ref "$branch"

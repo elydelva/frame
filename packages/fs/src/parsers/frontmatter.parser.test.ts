@@ -19,6 +19,16 @@ Body text here`;
     expect(Object.keys(data)).toHaveLength(0);
     expect(body).toBe("Just a body");
   });
+
+  it("parses a BOM and keeps later markdown separators in the body", () => {
+    const { data, body } = parseFrontmatter("\uFEFF---\r\nid: ADR-0001\r\n---\r\nA\r\n---\r\nB");
+    expect(data.id).toBe("ADR-0001");
+    expect(body).toBe("A\n---\nB");
+  });
+
+  it("rejects malformed YAML inside frontmatter", () => {
+    expect(() => parseFrontmatter("---\nid: [\n---\nBody")).toThrow();
+  });
 });
 
 describe("stringifyFrontmatter", () => {
