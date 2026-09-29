@@ -101,8 +101,8 @@ jobs:
     name: SonarCloud
     runs-on: ubuntu-latest
     needs: [test]
-    # Skip on forked PRs — SONAR_TOKEN is not available in that context
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id
+    # Analyze PRs before merge; this project's branch scans fail server-side.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
@@ -143,7 +143,7 @@ jobs:
   build-bin:
     name: Build Binary
     runs-on: ubuntu-latest
-    needs: [lint, typecheck, test, sonar]
+    needs: [lint, typecheck, test]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: oven-sh/setup-bun@4bc047ad259df6fc24a6c9b0f9a0cb08cf17fbe5 # v2
