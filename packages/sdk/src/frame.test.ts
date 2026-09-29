@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import {
@@ -14,7 +14,7 @@ import {
   Spec,
   SpecId,
 } from "@frame/core";
-import { Frame } from "./index.js";
+import { Frame, FrameInputError } from "./index.js";
 
 let root: string;
 
@@ -253,5 +253,131 @@ describe("Frame construction and read API", () => {
     log.mockRestore();
     write.mockRestore();
     exit.mockRestore();
+  });
+
+  test("createsEntitiesAndRecordsTraces", async () => {
+    const frame = new Frame({ repository: inMemoryRepository() });
+    const project = await frame.projects.create({ title: "Created", author: "me" });
+    const milestone = await frame.milestones.create({
+      projectId: project.id,
+      title: "Phase",
+      order: 1,
+      author: "me",
+    });
+    const issue = await frame.issues.create({
+      projectId: project.id,
+      milestoneId: milestone.id,
+      title: "Work",
+      author: "me",
+    });
+    const spec = await frame.specs.create({
+      projectId: project.id,
+      title: "Decision",
+      author: "me",
+    });
+    expect([
+      project.id.toString(),
+      milestone.id.toString(),
+      issue.id.toString(),
+      spec.id.toString(),
+    ]).toEqual(["PROJ-0001", "MILE-0001", "ISSUE-0001", "SPEC-0001"]);
+    expect(await frame.history()).toHaveLength(4);
+  });
+
+  test("editsAndChangesStatuses", async () => {
+    const repository = inMemoryRepository();
+    await seedRealm(repository);
+    const frame = new Frame({ repository });
+    expect(await frame.issues.edit("ISSUE-0001", { title: "Updated", actor: "me" })).toMatchObject({
+      title: "Updated",
+    });
+    expect(
+      await frame.issues.setStatus("ISSUE-0001", "in-progress", { actor: "me" })
+    ).toMatchObject({ status: "in-progress" });
+    expect(await frame.projects.setStatus("PROJ-0001", "paused", { actor: "me" })).toMatchObject({
+      status: "paused",
+    });
+    expect(await frame.milestones.setStatus("MILE-0001", "active", { actor: "me" })).toMatchObject({
+      status: "active",
+    });
+    await frame.specs.setStatus("SPEC-0001", "proposed", { actor: "me" });
+    expect(await frame.specs.setStatus("SPEC-0001", "accepted", { actor: "me" })).toMatchObject({
+      status: "accepted",
+    });
+  });
+
+  test("deletesIssuesAndRetainsDeletionTrace", async () => {
+    const repository = inMemoryRepository();
+    await seedRealm(repository);
+    const frame = new Frame({ repository });
+    await frame.issues.delete("ISSUE-0001", { actor: "me" });
+    expect(await frame.issues.get("ISSUE-0001")).toBeNull();
+    expect(await frame.history()).toHaveLength(1);
+    expect((await frame.history())[0]?.event).toBe("issue_deleted");
+  });
+
+  test("startsAndCompletesIssuesWithCoreRules", async () => {
+    const repository = inMemoryRepository();
+    await seedRealm(repository);
+    const frame = new Frame({ repository });
+    await frame.issues.start("ISSUE-0001", { actor: "me" });
+    await expect(frame.issues.complete("ISSUE-0001", { actor: "me" })).resolves.toMatchObject({
+      status: "completed",
+    });
+  });
+
+  test("addsAndRemovesIssueGates", async () => {
+    const repository = inMemoryRepository();
+    await seedRealm(repository);
+    await repository.saveIssue(
+      Issue.create({
+        id: IssueId.from("ISSUE-0002"),
+        projectId: ProjectId.from("PROJ-0001"),
+        title: "Second",
+        author: "me",
+      })
+    );
+    const frame = new Frame({ repository });
+    await expect(
+      frame.issues.addGate("ISSUE-0002", "ISSUE-0001", { actor: "me" })
+    ).resolves.toMatchObject({ gates: [IssueId.from("ISSUE-0001")] });
+    await expect(
+      frame.issues.addGate("ISSUE-0002", "ISSUE-0001", { actor: "me" })
+    ).rejects.toMatchObject({ code: "DUPLICATE_GATE" });
+    await frame.issues.removeGate("ISSUE-0002", "ISSUE-0001", { actor: "me" });
+    await expect(
+      frame.issues.removeGate("ISSUE-0002", "ISSUE-0001", { actor: "me" })
+    ).rejects.toMatchObject({ code: "GATE_NOT_FOUND" });
+  });
+
+  test("readsDefaultsForMissingOrMalformedConfig", async () => {
+    expect(await new Frame({ root }).config.get()).toEqual(DEFAULT_CONFIG);
+    await writeFile(path.join(root, ".frameconfig"), ": invalid: yaml");
+    expect(await new Frame({ root }).config.get()).toEqual(DEFAULT_CONFIG);
+  });
+
+  test("persistsSupportedConfigUpdates", async () => {
+    const frame = new Frame({ root });
+    await frame.config.set("priority.default", "high");
+    expect((await frame.config.get()).priority.default).toBe("high");
+    expect((await new Frame({ root }).config.get()).priority.default).toBe("high");
+  });
+
+  test("rejectsUnsupportedConfigKeys", async () => {
+    await expect(new Frame({ root }).config.set("priority.levels", "low")).rejects.toBeInstanceOf(
+      FrameInputError
+    );
+  });
+
+  test("rejectsConfigWritesWithoutRoot", async () => {
+    await expect(
+      new Frame({ repository: inMemoryRepository() }).config.set("priority.default", "high")
+    ).rejects.toMatchObject({ code: "CONFIG_STORAGE_UNAVAILABLE" });
+  });
+
+  test("initializesRealmFilesWithoutCliSideEffects", async () => {
+    const frame = await Frame.initialize({ root });
+    expect(await frame.projects.list()).toEqual([]);
+    await expect(readFile(path.join(root, "AGENTS.md"))).rejects.toMatchObject({ code: "ENOENT" });
   });
 });

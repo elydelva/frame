@@ -13,3 +13,5 @@ export type {
 export type { FrameOptions } from "./options.js";
 export type { IRealmRepository } from "@frame/core";
 export type { RealmConfig } from "@frame/core";
+export { FrameInputError } from "./errors.js";
+export type { FrameInputErrorCode } from "./errors.js";

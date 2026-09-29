@@ -19,6 +19,9 @@ import {
 } from "@frame/core";
 import type { Brief, BriefFilter, ContextFilter, HistoryFilter, NextResult } from "@frame/core";
 import { FsRealmRepository, readRealmConfig, readRealmFormat } from "@frame/fs";
+import { ConfigApi } from "./config.js";
+import { initializeFrame } from "./initialize.js";
+import { MutationApi } from "./mutations.js";
 import { type FrameOptions, assertFrameOptions } from "./options.js";
 
 export type IdInput<T> = T | string;
@@ -119,93 +122,113 @@ export interface CreateSpecInput {
 }
 
 export class Frame {
-  readonly projects: {
+  readonly projects: MutationApi["projects"] & {
     list(filter?: ProjectListFilter): Promise<Project[]>;
     get(id: IdInput<ProjectId>): Promise<Project | null>;
   };
-  readonly milestones: {
+  readonly milestones: MutationApi["milestones"] & {
     list(filter?: MilestoneListFilter): Promise<Milestone[]>;
     get(id: IdInput<MilestoneId>): Promise<Milestone | null>;
   };
-  readonly issues: {
+  readonly issues: MutationApi["issues"] & {
     list(filter?: IssueListFilter): Promise<Issue[]>;
     get(id: IdInput<IssueId>): Promise<Issue | null>;
     isEligibleToStart(id: IdInput<IssueId>): Promise<boolean>;
   };
-  readonly specs: {
+  readonly specs: MutationApi["specs"] & {
     list(filter?: SpecListFilter): Promise<Spec[]>;
     get(id: IdInput<SpecId>): Promise<Spec | null>;
   };
   readonly traces: {
     list(filter?: Parameters<IRealmRepository["findTraces"]>[0]): Promise<Trace[]>;
   };
-  readonly config: { get(): Promise<RealmConfig> };
+  readonly config: ConfigApi;
 
   private initialization?: Promise<FrameContext>;
 
   constructor(private readonly options: FrameOptions) {
     assertFrameOptions(options);
     const ready = () => this.initialize();
-    this.projects = {
-      list: async (filter = {}) => {
-        const { repository } = await ready();
-        const rows = await repository.findAllProjects();
-        return filter.status ? rows.filter((row) => row.status === filter.status) : rows;
+    const mutation = new MutationApi(ready);
+    this.projects = Object.assign(
+      {
+        list: async (filter: ProjectListFilter = {}) => {
+          const { repository } = await ready();
+          const rows = await repository.findAllProjects();
+          return filter.status ? rows.filter((row) => row.status === filter.status) : rows;
+        },
+        get: async (id: IdInput<ProjectId>) =>
+          (await ready()).repository.findProject(projectId(id)),
       },
-      get: async (id) => (await ready()).repository.findProject(projectId(id)),
-    };
-    this.milestones = {
-      list: async (filter = {}) => {
-        const { repository } = await ready();
-        const rows = filter.projectId
-          ? await repository.findMilestonesForProject(projectId(filter.projectId))
-          : await repository.findAllMilestones();
-        return filter.status ? rows.filter((row) => row.status === filter.status) : rows;
+      mutation.projects
+    );
+    this.milestones = Object.assign(
+      {
+        list: async (filter: MilestoneListFilter = {}) => {
+          const { repository } = await ready();
+          const rows = filter.projectId
+            ? await repository.findMilestonesForProject(projectId(filter.projectId))
+            : await repository.findAllMilestones();
+          return filter.status ? rows.filter((row) => row.status === filter.status) : rows;
+        },
+        get: async (id: IdInput<MilestoneId>) =>
+          (await ready()).repository.findMilestone(milestoneId(id)),
       },
-      get: async (id) => (await ready()).repository.findMilestone(milestoneId(id)),
-    };
-    this.issues = {
-      list: async (filter = {}) => {
-        const { repository } = await ready();
-        const rows = filter.projectId
-          ? await repository.findIssuesForProject(projectId(filter.projectId))
-          : await repository.findAllIssues();
-        return rows.filter(
-          (row) =>
-            (!filter.status || row.status === filter.status) &&
-            (!filter.assignee || row.assignee === filter.assignee) &&
-            (!filter.branch || row.branch === filter.branch) &&
-            (!filter.priority || row.priority === filter.priority) &&
-            (!filter.milestoneId || row.milestoneId?.equals(milestoneId(filter.milestoneId))) &&
-            (!filter.label || row.labels.includes(filter.label))
-        );
+      mutation.milestones
+    );
+    this.issues = Object.assign(
+      {
+        list: async (filter: IssueListFilter = {}) => {
+          const { repository } = await ready();
+          const rows = filter.projectId
+            ? await repository.findIssuesForProject(projectId(filter.projectId))
+            : await repository.findAllIssues();
+          return rows.filter(
+            (row) =>
+              (!filter.status || row.status === filter.status) &&
+              (!filter.assignee || row.assignee === filter.assignee) &&
+              (!filter.branch || row.branch === filter.branch) &&
+              (!filter.priority || row.priority === filter.priority) &&
+              (!filter.milestoneId || row.milestoneId?.equals(milestoneId(filter.milestoneId))) &&
+              (!filter.label || row.labels.includes(filter.label))
+          );
+        },
+        get: async (id: IdInput<IssueId>) => (await ready()).repository.findIssue(issueId(id)),
+        isEligibleToStart: async (id: IdInput<IssueId>) => {
+          const { repository } = await ready();
+          const [issues, projects, milestones] = await Promise.all([
+            repository.findAllIssues(),
+            repository.findAllProjects(),
+            repository.findAllMilestones(),
+          ]);
+          const eligible = new DAGService().getEligibleIssues(issues, projects, milestones);
+          return eligible.some((issue) => issue.id.equals(issueId(id)));
+        },
       },
-      get: async (id) => (await ready()).repository.findIssue(issueId(id)),
-      isEligibleToStart: async (id) => {
-        const { repository } = await ready();
-        const [issues, projects, milestones] = await Promise.all([
-          repository.findAllIssues(),
-          repository.findAllProjects(),
-          repository.findAllMilestones(),
-        ]);
-        const eligible = new DAGService().getEligibleIssues(issues, projects, milestones);
-        return eligible.some((issue) => issue.id.equals(issueId(id)));
+      mutation.issues
+    );
+    this.specs = Object.assign(
+      {
+        list: async (filter: SpecListFilter = {}) => {
+          const { repository } = await ready();
+          const rows = filter.projectId
+            ? await repository.findSpecsForProject(projectId(filter.projectId))
+            : await repository.findAllSpecs();
+          return filter.status ? rows.filter((row) => row.status === filter.status) : rows;
+        },
+        get: async (id: IdInput<SpecId>) => (await ready()).repository.findSpec(specId(id)),
       },
-    };
-    this.specs = {
-      list: async (filter = {}) => {
-        const { repository } = await ready();
-        const rows = filter.projectId
-          ? await repository.findSpecsForProject(projectId(filter.projectId))
-          : await repository.findAllSpecs();
-        return filter.status ? rows.filter((row) => row.status === filter.status) : rows;
-      },
-      get: async (id) => (await ready()).repository.findSpec(specId(id)),
-    };
+      mutation.specs
+    );
     this.traces = {
       list: async (filter = {}) => (await ready()).repository.findTraces(filter),
     };
-    this.config = { get: async () => (await ready()).config };
+    this.config = new ConfigApi(ready, options.root, async (config) => {
+      const value = await ready();
+      value.config = structuredClone(config);
+      value.getNext = new GetNextUseCase(value.repository, config);
+      value.getBrief = new GetBriefUseCase(value.repository, config);
+    });
   }
 
   async next(options?: Parameters<GetNextUseCase["execute"]>[0]): Promise<NextResult | null> {
@@ -246,7 +269,7 @@ export class Frame {
     };
   }
 
-  static async initialize(_options: { root: string }): Promise<Frame> {
-    throw new Error("Frame.initialize is not available until realm initialization is implemented.");
+  static async initialize(options: { root: string }): Promise<Frame> {
+    return initializeFrame(options.root, (root) => new Frame({ root }));
   }
 }
