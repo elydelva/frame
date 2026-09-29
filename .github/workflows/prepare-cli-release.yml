@@ -39,6 +39,7 @@ jobs:
         run: |
           bun scripts/prepare-cli-release.mjs "$VERSION"
           bun install --frozen-lockfile
+          bunx biome format --write apps/cli/package.json
           bun install
           test "$(bun apps/cli/src/index.ts --version)" = "$VERSION"
       - name: Open release PR
