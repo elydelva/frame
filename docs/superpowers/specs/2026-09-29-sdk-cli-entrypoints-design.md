@@ -1,6 +1,6 @@
 # SDK and CLI entry points
 
-**Status:** Approved design; implementation plan not started
+**Status:** Amended; awaiting user review
 **Date:** 2026-09-29
 
 ## Problem statement
@@ -28,8 +28,7 @@ repository adapter of their own.
 - Provide a stable `@frame/sdk` API centered on `new Frame({ root })`.
 - Use Frame's filesystem adapter by default and support an injected repository
   for custom storage integrations.
-- Expose typed reads and mutations for all Frame entity data, plus config and
-  validation operations useful to programmatic consumers.
+- Expose typed reads and mutations for all Frame entity data and configuration.
 - Make the CLI consume the same SDK operations instead of duplicating
   application assembly or bypassing use cases for entity operations.
 - Move CLI-owned code to `apps/cli` and preserve the `frame` command's public
@@ -39,6 +38,8 @@ repository adapter of their own.
 ## Non-goals
 
 - Add a dynamic plugin loader or runtime adapter discovery.
+- Do not include realm linting in the SDK; validation remains a CLI capability
+  backed by `@frame/lint`.
 - Add remote synchronization, a TUI, or a new storage format.
 - Move Git worktree lifecycle into the general-purpose SDK.
 - Change command names, flags, output formats, realm formats, or existing
@@ -128,7 +129,6 @@ and `traces`) and includes:
 - `next`, `context`, `history`, and `brief` queries.
 - Typed configuration reads and the currently supported safe configuration
   updates.
-- Realm validation returning a report rather than a process exit code.
 - An SDK initialization operation for Frame data: `.frame/`, format manifest,
   counters, templates, and initial `.frameconfig`.
 
@@ -145,9 +145,9 @@ and JSON output, and exit semantics.
 CLI handlers use SDK methods for entity reads and mutations. The CLI retains
 terminal formatting, Commander registration, JSON error reporting, process
 exit behavior, `doctor --fix`, and worktree claims and Git coordination. Raw
-realm scanning and lint report production may be called through the SDK's
-validation surface; CLI-specific formatting and exit-on-error remain in the
-CLI.
+realm scanning and lint report production remain in the CLI composition over
+`@frame/fs` and `@frame/lint`; `@frame/sdk` has no lint dependency or validation
+API. CLI-specific formatting and exit-on-error remain in the CLI.
 
 ## Error behavior
 
@@ -156,7 +156,6 @@ CLI.
 - Filesystem and custom-adapter failures propagate as errors with their cause
   preserved; the SDK does not convert failures into console output or exit
   codes.
-- Validation returns findings as data, including error and warning counts.
 - The CLI remains responsible for mapping SDK errors to the established
   human/JSON error format and process exit status.
 - Initialization is explicit. Constructing `Frame` does not write realm files
@@ -179,11 +178,11 @@ CLI.
 ## Verification plan
 
 - SDK tests cover the public `Frame` API against a temporary filesystem realm,
-  explicit initialization, config behavior, format compatibility, validation,
-  and a custom in-memory repository adapter.
+  explicit initialization, config behavior, format compatibility, and a custom
+  in-memory repository adapter.
 - Existing core, filesystem, Git, lint, and CLI tests remain green.
 - CLI regression tests protect command registration, options, text and JSON
-  output, errors, and process exit behavior during the move.
+  output, lint findings, errors, and process exit behavior during the move.
 - Package checks verify workspace resolution, declaration generation,
   package contents, and installability of the SDK and CLI from packed
   artifacts without relying on workspace-only `workspace:*` dependencies.
@@ -201,7 +200,5 @@ approved product direction:
    product entry points.
 2. Define exact method names and input/result types for the domain namespaces,
    preserving existing use-case semantics and ID validation.
-3. Decide the precise division between an SDK validation report and the
-   CLI-specific `doctor --fix` repair algorithm.
-4. Choose the versioning and release sequence for SDK support packages and
+3. Choose the versioning and release sequence for SDK support packages and
    the CLI artifact.
