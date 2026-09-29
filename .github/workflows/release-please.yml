@@ -68,9 +68,3 @@ jobs:
         working-directory: packages/sdk
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish frame CLI to npm
-        run: bun publish --access public
-        working-directory: apps/cli
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

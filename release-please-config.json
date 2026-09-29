@@ -16,14 +16,13 @@
   "packages": {
     "packages/core": { "release-type": "node", "component": "core" },
     "packages/fs": { "release-type": "node", "component": "fs" },
-    "packages/sdk": { "release-type": "node", "component": "sdk" },
-    "apps/cli": { "release-type": "node", "component": "frame" }
+    "packages/sdk": { "release-type": "node", "component": "sdk" }
   },
   "plugins": [
     {
       "type": "linked-versions",
       "groupName": "frame",
-      "components": ["core", "fs", "sdk", "frame"]
+      "components": ["core", "fs", "sdk"]
     }
   ]
 }

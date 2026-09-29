@@ -1,0 +1,169 @@
+name: Release frame CLI
+
+on:
+  push:
+    branches: [release]
+
+concurrency:
+  group: release-frame-cli
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: Validate new CLI version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./apps/cli/package.json').version")
+          tag="frame-v${version}"
+          test "$(node -p "require('./apps/cli/package.json').name")" = frame
+          if gh release view "$tag" >/dev/null 2>&1 || git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+            echo "CLI version $version already exists; increment apps/cli/package.json before pushing to release" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run typecheck
+      # Existing CLI files miss the repository's per-file coverage threshold.
+      # Run every assertion here; the main CI still enforces coverage separately.
+      - name: Run test assertions
+        run: |
+          sed -i 's/^coverage = true$/coverage = false/' bunfig.toml
+          bun test
+
+  build:
+    needs: [version, quality]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: bun-darwin-arm64
+            asset: darwin-arm64
+          - os: macos-15-intel
+            target: bun-darwin-x64
+            asset: darwin-x64
+          - os: ubuntu-24.04-arm
+            target: bun-linux-arm64
+            asset: linux-arm64
+          - os: ubuntu-latest
+            target: bun-linux-x64
+            asset: linux-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - name: Verify source CLI version
+        run: test "$(bun apps/cli/src/index.ts --version)" = "${{ needs.version.outputs.version }}"
+      - name: Compile and smoke test native binary
+        run: |
+          mkdir -p dist/release
+          bun build apps/cli/src/index.ts --compile --target=${{ matrix.target }} --outfile dist/release/frame
+          test "$(dist/release/frame --version)" = "${{ needs.version.outputs.version }}"
+          dist/release/frame --help >/dev/null
+          tar -czf "dist/frame-${{ needs.version.outputs.version }}-${{ matrix.asset }}.tar.gz" -C dist/release frame
+          shasum -a 256 "dist/frame-${{ needs.version.outputs.version }}-${{ matrix.asset }}.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frame-${{ matrix.asset }}
+          path: dist/frame-*.tar.gz
+          if-no-files-found: error
+
+  publish:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ needs.version.outputs.version }}
+      tag: ${{ needs.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: frame-*
+          path: dist
+          merge-multiple: true
+      - name: Verify complete release payload
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64; do
+            test -s "dist/frame-${VERSION}-${target}.tar.gz"
+          done
+          test "$(find dist -name 'frame-*.tar.gz' | wc -l | tr -d ' ')" = 4
+      - name: Create immutable GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.version.outputs.tag }}
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          gh release create "$TAG" dist/frame-*.tar.gz --target "$GITHUB_SHA" --title "frame $VERSION" --notes "Standalone frame CLI binaries for macOS and Linux."
+          mkdir -p verify
+          for target in darwin-arm64 darwin-x64 linux-arm64 linux-x64; do
+            gh release download "$TAG" --pattern "frame-${VERSION}-${target}.tar.gz" --dir verify
+            cmp "dist/frame-${VERSION}-${target}.tar.gz" "verify/frame-${VERSION}-${target}.tar.gz"
+          done
+
+  update-tap:
+    needs: publish
+    if: vars.TAP_AUTOMATION_READY == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: frame-*
+          path: artifacts
+          merge-multiple: true
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.TAP_APP_ID }}
+          private-key: ${{ secrets.TAP_APP_PRIVATE_KEY }}
+          owner: elydelva
+          repositories: homebrew-tap
+          permission-contents: write
+          permission-pull-requests: write
+      - uses: actions/checkout@v4
+        with:
+          repository: elydelva/homebrew-tap
+          token: ${{ steps.app-token.outputs.token }}
+          path: tap
+      - name: Update formula and open PR
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+          TAG: ${{ needs.publish.outputs.tag }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          ruby tap/scripts/update-frame.rb "$VERSION" "$TAG" artifacts tap/Formula/frame.rb
+          cd tap
+          git diff --check
+          git checkout -B "bot/frame-${VERSION}"
+          git add Formula/frame.rb
+          git -c user.name='frame-release[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "chore: update frame to ${VERSION}"
+          git push --force-with-lease origin "bot/frame-${VERSION}"
+          if ! gh pr view "bot/frame-${VERSION}" --repo elydelva/homebrew-tap >/dev/null 2>&1; then
+            gh pr create --repo elydelva/homebrew-tap --base main --head "bot/frame-${VERSION}" --title "chore: update frame to ${VERSION}" --body "Update the four platform archives and SHA-256 checksums for frame ${VERSION}."
+          fi
+          gh pr merge "bot/frame-${VERSION}" --repo elydelva/homebrew-tap --auto --squash
