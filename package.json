@@ -24,8 +24,8 @@
     "commander": "^13.0.0"
   },
   "scripts": {
-    "build": "bun run --filter '@frame/core' build && bun run --filter './packages/fs' build && bun run --filter './packages/git' build && bun run --filter './packages/lint' build && bun run --filter '@frame/sdk' build && bun run --filter './packages/frame' build",
-    "build:bin": "bun build packages/frame/src/index.ts --compile --outfile dist/frame --target bun",
+    "build": "bun run --filter '@frame/core' build && bun run --filter './packages/fs' build && bun run --filter './packages/git' build && bun run --filter './packages/lint' build && bun run --filter '@frame/sdk' build && bun run --filter './apps/cli' build",
+    "build:bin": "bun build apps/cli/src/index.ts --compile --outfile dist/frame --target bun",
     "test": "bun test --coverage",
     "test:watch": "bun test --watch",
     "lint": "biome lint .",

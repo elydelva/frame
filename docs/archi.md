@@ -91,7 +91,7 @@ closed. Frame does not migrate formats automatically.
   serialization, configuration, format and scan functions.
 - `packages/git/src/index.ts` exports the Git adapters and command error.
 - `packages/lint/src/index.ts` exports `LintEngine` and finding/report types.
-- `packages/frame/src/cli.ts` registers commands; `container.ts` assembles
+- `apps/cli/src/cli.ts` registers commands; `container.ts` assembles
   dependencies; command handlers live under `commands/`.
 
 Add a new workspace package only when it has a concrete responsibility and a
