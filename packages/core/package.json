@@ -1,7 +1,7 @@
 {
   "name": "@frame/core",
-  "version": "0.1.1",
-  "description": "frame domain \u2014 entities, ports, use cases",
+  "version": "1.0.0",
+  "description": "frame domain — entities, ports, use cases",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -17,7 +17,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
