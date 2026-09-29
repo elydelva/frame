@@ -31,6 +31,6 @@
     "@frame/fs": "0.1.1"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "typescript": "^5.7.0"
   }
 }

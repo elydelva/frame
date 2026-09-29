@@ -169,6 +169,27 @@ frame init
 # → ready
 ```
 
+## TypeScript SDK
+
+Use `@frame/sdk` when another program needs to read or update Frame data. Pass
+the repository root and the SDK supplies its filesystem adapter:
+
+```ts
+import { Frame } from "@frame/sdk";
+
+const frame = new Frame({ root: "/path/to/repository" });
+const issues = await frame.issues.list({ projectId: "PROJ-0001" });
+```
+
+Operations are asynchronous and return domain values. Construction does not
+read or write files; the SDK loads realm format and configuration on first use.
+It can also accept a custom `IRealmRepository` adapter, with optional explicit
+configuration. `Frame.initialize({ root })` creates missing Frame data files.
+
+The CLI remains the second supported entry point: install `frame` to get
+terminal output, Git/worktree coordination, structural linting, and
+`doctor --fix`. Linting is intentionally not part of the SDK.
+
 ---
 
 ## Configuration — `.frameconfig`

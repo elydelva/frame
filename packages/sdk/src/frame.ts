@@ -68,6 +68,9 @@ export interface IssueListFilter {
   branch?: string;
   priority?: Issue["priority"];
 }
+export interface NextOptions {
+  excludedIssueIds?: ReadonlySet<string>;
+}
 
 export interface CreateProjectInput {
   title: string;
@@ -231,7 +234,7 @@ export class Frame {
     });
   }
 
-  async next(options?: Parameters<GetNextUseCase["execute"]>[0]): Promise<NextResult | null> {
+  async next(options?: NextOptions): Promise<NextResult | null> {
     return (await this.initialize()).getNext.execute(options);
   }
   async context(

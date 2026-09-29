@@ -12,41 +12,37 @@
         "typescript": "catalog:",
       },
     },
-    "packages/core": {
-      "name": "@frame/core",
-      "version": "0.0.0",
-      "devDependencies": {
-        "typescript": "catalog:",
-      },
-    },
-    "packages/frame": {
+    "apps/cli": {
       "name": "frame",
       "version": "0.1.1",
       "bin": {
         "frame": "./dist/index.js",
       },
       "dependencies": {
-        "@frame/core": "workspace:*",
-        "@frame/fs": "workspace:*",
-        "@frame/git": "workspace:*",
-        "@frame/lint": "workspace:*",
-        "commander": "catalog:",
+        "commander": "^13.0.0",
       },
       "devDependencies": {
-        "typescript": "catalog:",
+        "@frame/sdk": "0.1.1",
+      },
+    },
+    "packages/core": {
+      "name": "@frame/core",
+      "version": "0.1.1",
+      "devDependencies": {
+        "typescript": "^5.7.0",
       },
     },
     "packages/fs": {
       "name": "@frame/fs",
-      "version": "0.0.0",
+      "version": "0.1.1",
       "dependencies": {
-        "@frame/core": "workspace:*",
-        "gray-matter": "catalog:",
-        "js-yaml": "catalog:",
+        "@frame/core": "0.1.1",
+        "gray-matter": "^4.0.3",
+        "js-yaml": "^4.1.0",
       },
       "devDependencies": {
         "@types/js-yaml": "4.0.9",
-        "typescript": "catalog:",
+        "typescript": "^5.7.0",
       },
     },
     "packages/git": {
@@ -67,6 +63,17 @@
       },
       "devDependencies": {
         "typescript": "catalog:",
+      },
+    },
+    "packages/sdk": {
+      "name": "@frame/sdk",
+      "version": "0.1.1",
+      "dependencies": {
+        "@frame/core": "0.1.1",
+        "@frame/fs": "0.1.1",
+      },
+      "devDependencies": {
+        "typescript": "^5.7.0",
       },
     },
   },
@@ -109,6 +116,8 @@
     "@frame/git": ["@frame/git@workspace:packages/git"],
 
     "@frame/lint": ["@frame/lint@workspace:packages/lint"],
+
+    "@frame/sdk": ["@frame/sdk@workspace:packages/sdk"],
 
     "@types/js-yaml": ["@types/js-yaml@4.0.9", "", {}, "sha512-k4MGaQl5TGo/iipqb2UDG2UwjXziSWkh0uysQelTlJpX1qGlpUZYm8PnO4DxG1qBomtJUdYJ6qR6xdIah10JLg=="],
 
@@ -154,7 +163,7 @@
 
     "fill-range": ["fill-range@7.1.1", "", { "dependencies": { "to-regex-range": "^5.0.1" } }, "sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg=="],
 
-    "frame": ["frame@workspace:packages/frame"],
+    "frame": ["frame@workspace:apps/cli"],
 
     "get-east-asian-width": ["get-east-asian-width@1.5.0", "", {}, "sha512-CQ+bEO+Tva/qlmw24dCejulK5pMzVnUOFOijVogd3KQs07HnRIgp8TGipvCCRT06xeYEbpbgwaCxglFyiuIcmA=="],
 

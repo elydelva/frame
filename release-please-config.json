@@ -16,15 +16,14 @@
   "packages": {
     "packages/core": { "release-type": "node", "component": "core" },
     "packages/fs": { "release-type": "node", "component": "fs" },
-    "packages/git": { "release-type": "node", "component": "git" },
-    "packages/lint": { "release-type": "node", "component": "lint" },
+    "packages/sdk": { "release-type": "node", "component": "sdk" },
     "apps/cli": { "release-type": "node", "component": "frame" }
   },
   "plugins": [
     {
       "type": "linked-versions",
       "groupName": "frame",
-      "components": ["core", "fs", "git", "lint", "frame"]
+      "components": ["core", "fs", "sdk", "frame"]
     }
   ]
 }

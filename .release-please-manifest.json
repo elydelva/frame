@@ -1,9 +1,6 @@
 {
   "packages/core": "0.1.0",
   "packages/fs": "0.1.0",
-  "packages/git": "0.1.0",
-  "packages/lint": "0.1.0",
-  "packages/tui": "0.1.0",
-  "packages/sync": "0.1.0",
-  "packages/frame": "0.1.0"
+  "packages/sdk": "0.1.0",
+  "apps/cli": "0.1.0"
 }

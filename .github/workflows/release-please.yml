@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       releases_created: ${{ steps.release.outputs.releases_created }}
-      frame_version: ${{ steps.release.outputs['packages/frame--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -49,11 +48,29 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Compile binary
-        run: bun run build:bin
+      - name: Build publishable packages
+        run: bun run build
 
-      - name: Publish frame to npm
+      - name: Publish @frame/core to npm
         run: bun publish --access public
-        working-directory: packages/frame
+        working-directory: packages/core
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @frame/fs to npm
+        run: bun publish --access public
+        working-directory: packages/fs
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @frame/sdk to npm
+        run: bun publish --access public
+        working-directory: packages/sdk
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish frame CLI to npm
+        run: bun publish --access public
+        working-directory: apps/cli
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

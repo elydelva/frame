@@ -3,6 +3,7 @@
   "version": "0.1.1",
   "description": "Decision-first, agent-native project management system for git repositories",
   "type": "module",
+  "main": "./dist/index.js",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -13,7 +14,7 @@
     "frame": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf dist && bun build src/index.ts --target=node --sourcemap=none --packages=bundle --outfile dist/index.js --external commander",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
     "clean": "rm -rf dist && rm -f tsconfig.tsbuildinfo",
@@ -24,14 +25,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@frame/core": "workspace:*",
-    "@frame/fs": "workspace:*",
-    "@frame/git": "workspace:*",
-    "@frame/lint": "workspace:*",
-    "@frame/sdk": "0.1.1",
-    "commander": "catalog:"
+    "commander": "^13.0.0"
   },
   "devDependencies": {
-    "typescript": "catalog:"
+    "@frame/sdk": "0.1.1"
   }
 }

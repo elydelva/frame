@@ -7,11 +7,63 @@ export type {
   IdInput,
   IssueListFilter,
   MilestoneListFilter,
+  NextOptions,
   ProjectListFilter,
   SpecListFilter,
 } from "./frame.js";
 export type { FrameOptions } from "./options.js";
-export type { IRealmRepository } from "@frame/core";
-export type { RealmConfig } from "@frame/core";
+export {
+  DEFAULT_CONFIG,
+  GatesNotClearedError,
+  InvalidIdError,
+  InvalidTransitionError,
+  IssueNotFoundError,
+  IssueId,
+  MilestoneNotFoundError,
+  MilestoneId,
+  ProjectNotFoundError,
+  ProjectId,
+  SpecNotFoundError,
+  SpecId,
+  TraceId,
+} from "@frame/core";
+export type {
+  Brief,
+  BriefDependency,
+  BriefFilter,
+  BriefRuleGroup,
+  ContextFilter,
+  CreateIssueParams,
+  CreateMilestoneParams,
+  CreateProjectParams,
+  CreateSpecParams,
+  CreateTraceParams,
+  EditIssuePatch,
+  EstimationConfig,
+  EstimationScale,
+  EstimatePoint,
+  HistoryFilter,
+  IRealmRepository,
+  Issue,
+  IssueStatus,
+  LabelConfig,
+  Milestone,
+  MilestoneStatus,
+  NextResult,
+  Priority,
+  PriorityConfig,
+  Project,
+  ProjectStatus,
+  RealmConfig,
+  RealmContext,
+  Rule,
+  Spec,
+  SpecStatus,
+  Trace,
+  TraceEvent,
+  TraceFilter,
+} from "@frame/core";
 export { FrameInputError } from "./errors.js";
 export type { FrameInputErrorCode } from "./errors.js";
+export type { MutationOptions } from "./mutations.js";
+export { RealmFormatError } from "@frame/fs";
