@@ -22,6 +22,10 @@
         "commander": "^13.0.0",
       },
       "devDependencies": {
+        "@frame/core": "workspace:*",
+        "@frame/fs": "workspace:*",
+        "@frame/git": "workspace:*",
+        "@frame/lint": "workspace:*",
         "@frame/sdk": "0.1.1",
       },
     },
