@@ -7,7 +7,7 @@ Decision-first, agent-native project management system that lives inside your gi
 ## Install
 
 ```bash
-npm install -g frame
+brew install elydelva/tap/frame
 ```
 
 ## Quick start

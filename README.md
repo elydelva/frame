@@ -157,7 +157,7 @@ Frame currently stores project data in Git. Linear and GitHub Issues synchroniza
 ## Install
 
 ```bash
-npm install -g frame
+brew install elydelva/tap/frame
 ```
 
 ```bash
@@ -235,6 +235,21 @@ the realm data from version control. Format migrations are explicit and are
 not performed automatically.
 
 ---
+
+## Releasing the CLI
+
+Open **Actions → Prepare frame CLI release PR → Run workflow** on the `main`
+branch and enter the next CLI version, such as `0.1.2`. The workflow updates the
+CLI version and lockfile, opens a PR into `release`, and starts CI on the PR
+branch. Review and merge that PR once CI passes. A push to `release` publishes
+the four native binaries; the Homebrew tap update runs when its GitHub App is
+configured.
+
+From a terminal, the same button is available with:
+
+```bash
+gh workflow run prepare-cli-release.yml --repo elydelva/frame --ref main -f version=0.1.2
+```
 
 ## The spec
 

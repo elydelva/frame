@@ -18,15 +18,12 @@
     "@biomejs/biome": "^1.9.4",
     "bun-types": "^1.2.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.2.10",
-    "gray-matter": "^4.0.3",
-    "js-yaml": "^4.1.0",
-    "commander": "^13.0.0"
+    "lint-staged": "^15.2.10"
   },
   "scripts": {
     "build": "bun run --filter '@frame/core' build && bun run --filter './packages/fs' build && bun run --filter './packages/git' build && bun run --filter './packages/lint' build && bun run --filter '@frame/sdk' build && bun run --filter './apps/cli' build",
     "build:bin": "bun build apps/cli/src/index.ts --compile --outfile dist/frame --target bun",
-    "test": "bun test --coverage",
+    "test": "bun test --coverage && bun scripts/check-coverage.mjs",
     "test:watch": "bun test --watch",
     "lint": "biome lint .",
     "format": "biome format --write .",

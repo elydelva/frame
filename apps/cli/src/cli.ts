@@ -16,7 +16,7 @@ import { runWorktreeList } from "./commands/worktree.js";
 import { createContainer } from "./container.js";
 
 // Kept in sync with package.json "version".
-const CLI_VERSION = "0.1.1";
+const CLI_VERSION = "0.1.2";
 
 function getRealmRoot(): string {
   return process.env.FRAME_ROOT ?? process.cwd();

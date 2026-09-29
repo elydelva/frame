@@ -44,12 +44,8 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run lint
       - run: bun run typecheck
-      # Existing CLI files miss the repository's per-file coverage threshold.
-      # Run every assertion here; the main CI still enforces coverage separately.
-      - name: Run test assertions
-        run: |
-          sed -i 's/^coverage = true$/coverage = false/' bunfig.toml
-          bun test
+      - name: Run tests and coverage gate
+        run: bun run test
 
   build:
     needs: [version, quality]
