@@ -1,6 +1,6 @@
 {
   "name": "frame",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Decision-first, agent-native project management system for git repositories",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,7 +9,14 @@
     "type": "git",
     "url": "git+https://github.com/elydelva/frame.git"
   },
-  "keywords": ["adr", "architecture", "decision-record", "cli", "agent", "git"],
+  "keywords": [
+    "adr",
+    "architecture",
+    "decision-record",
+    "cli",
+    "agent",
+    "git"
+  ],
   "bin": {
     "frame": "./dist/index.js"
   },
@@ -20,7 +27,10 @@
     "clean": "rm -rf dist && rm -f tsconfig.tsbuildinfo",
     "prepublishOnly": "bun run typecheck && bun run build && bun test"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
