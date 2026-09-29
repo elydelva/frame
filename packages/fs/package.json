@@ -1,7 +1,7 @@
 {
   "name": "@frame/fs",
-  "version": "0.1.1",
-  "description": "frame filesystem adapter \u2014 IRealmRepository implementation",
+  "version": "1.0.0",
+  "description": "frame filesystem adapter — IRealmRepository implementation",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -17,7 +17,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
