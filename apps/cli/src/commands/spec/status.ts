@@ -31,9 +31,7 @@ export async function runSpecStatus(
   }
 
   const { actor, actorType, note } = resolveActor(opts);
-  const spec = await container.setSpecStatus.execute({
-    id: SpecId.from(idRaw),
-    to: statusRaw as SpecStatus,
+  const spec = await container.frame.specs.setStatus(SpecId.from(idRaw), statusRaw as SpecStatus, {
     actor,
     actorType,
     ...(note ? { note } : {}),

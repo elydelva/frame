@@ -1,4 +1,3 @@
-import { ProjectId } from "@frame/core";
 import type { Container } from "../../container.js";
 import { setJsonMode } from "../json-mode.js";
 import { getFormatter } from "../output.js";
@@ -14,9 +13,9 @@ export async function runMilestoneList(
   opts: MilestoneListOptions
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
-  const milestones = opts.project
-    ? await container.repo.findMilestonesForProject(ProjectId.from(opts.project))
-    : await container.repo.findAllMilestones();
+  const milestones = await container.frame.milestones.list(
+    opts.project ? { projectId: opts.project } : {}
+  );
   const sorted = [...milestones].sort((a, b) => a.order - b.order);
 
   getFormatter(opts.json ?? false).emit({

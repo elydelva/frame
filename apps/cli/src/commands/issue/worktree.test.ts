@@ -24,15 +24,15 @@ async function fixture() {
   await fs.mkdir(path.join(root, ".worktrees"), { recursive: true });
   await fs.writeFile(path.join(root, ".git", "info", "exclude"), ".worktrees/\n");
   const container = await createContainer(root);
-  const project = await container.createProject.execute({
+  const project = await container.frame.projects.create({
     title: "Frame",
     author: "test",
     actor: "test",
     leads: [],
     body: "",
   });
-  await container.setProjectStatus.execute({ id: project.id, to: "active", actor: "test" });
-  const issue = await container.createIssue.execute({
+  await container.frame.projects.setStatus(project.id, "active", { actor: "test" });
+  const issue = await container.frame.issues.create({
     projectId: project.id,
     title: "Add Worktree Workflow",
     author: "test",
@@ -95,7 +95,7 @@ describe("runIssueWorktree", () => {
     expect(git(root, "rev-parse", "HEAD")).toBe(initialHead);
     expect(git(root, "status", "--porcelain")).toBe("");
     const started = await createContainer(result.path);
-    const updated = await started.repo.findIssue(issue.id);
+    const updated = await started.frame.issues.get(issue.id);
     expect(updated?.status).toBe("in-progress");
     expect(updated?.assignee).toBe("agent:test");
     expect(updated?.branch).toBe(result.branch);
@@ -125,7 +125,7 @@ describe("runIssueWorktree", () => {
 
   it("rejects an issue that is already in progress before creating a claim", async () => {
     const { root, container, issue } = await fixture();
-    await container.startIssue.execute({ id: issue.id, actor: "test" });
+    await container.frame.issues.start(issue.id, { actor: "test" });
     await expect(
       runIssueWorktree(container, issue.id.toString(), { actor: "agent:test" })
     ).rejects.toThrow("not eligible");
@@ -164,7 +164,7 @@ describe("runIssueWorktree", () => {
     );
     expect(git(root, "-C", customPath, "rev-parse", "HEAD")).toBe(base);
     const started = await createContainer(customPath);
-    expect((await started.repo.findIssue(issue.id))?.assignee).toBe("ely");
+    expect((await started.frame.issues.get(issue.id))?.assignee).toBe("ely");
   });
 
   it("rejects an explicit worktree path that is not ignored", async () => {

@@ -12,7 +12,7 @@ export async function runProjectList(
   opts: ProjectListOptions
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
-  const projects = await container.repo.findAllProjects();
+  const projects = await container.frame.projects.list();
 
   getFormatter(opts.json ?? false).emit({
     json: projects.map(serializeProject),

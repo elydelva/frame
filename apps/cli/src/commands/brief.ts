@@ -23,7 +23,7 @@ export async function runBrief(container: Container, opts: BriefOptions): Promis
   if (opts.issue) filter.issueId = IssueId.from(opts.issue);
   if (opts.project) filter.projectId = ProjectId.from(opts.project);
 
-  const brief = await container.getBrief.execute({ ...filter, excludedIssueIds });
+  const brief = await container.frame.brief({ ...filter, excludedIssueIds });
   const claimId = opts.issue ?? brief.issue?.id.toString();
   const claimEntry = claimId ? claimEntries.find((entry) => entry.issueId === claimId) : undefined;
   const claim = claimEntry?.claim ?? null;

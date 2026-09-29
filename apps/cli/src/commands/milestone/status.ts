@@ -22,13 +22,15 @@ export async function runMilestoneStatus(
   }
 
   const { actor, actorType, note } = resolveActor(opts);
-  const milestone = await container.setMilestoneStatus.execute({
-    id: MilestoneId.from(idRaw),
-    to: statusRaw as MilestoneStatus,
-    actor,
-    actorType,
-    ...(note ? { note } : {}),
-  });
+  const milestone = await container.frame.milestones.setStatus(
+    MilestoneId.from(idRaw),
+    statusRaw as MilestoneStatus,
+    {
+      actor,
+      actorType,
+      ...(note ? { note } : {}),
+    }
+  );
 
   getFormatter(opts.json ?? false).emit({
     json: serializeMilestone(milestone),

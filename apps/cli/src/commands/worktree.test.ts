@@ -22,20 +22,16 @@ async function fixture() {
   git(root, "config", "user.name", "Test Agent");
   git(root, "config", "user.email", "test@example.com");
   const container = await createContainer(root);
-  const project = await container.createProject.execute({
+  const project = await container.frame.projects.create({
     title: "Project",
     author: "test",
     actor: "test",
     leads: [],
     body: "",
   });
-  const activeProject = await container.setProjectStatus.execute({
-    id: project.id,
-    to: "active",
-    actor: "test",
-  });
-  const issue = await container.createIssue.execute({
-    projectId: activeProject.id,
+  await container.frame.projects.setStatus(project.id, "active", { actor: "test" });
+  const issue = await container.frame.issues.create({
+    projectId: project.id,
     title: "Task",
     author: "test",
     actor: "test",
@@ -112,7 +108,7 @@ describe("worktree list and issue release", () => {
     await runIssueRelease(container, issue.id.toString(), { json: true });
     expect(await claims.get(issue.id.toString())).toBeNull();
     expect((await worktrees.list()).some((tree) => tree.path === targetPath)).toBe(true);
-    expect((await container.repo.findIssue(issue.id))?.status).toBe("not-started");
+    expect((await container.frame.issues.get(issue.id))?.status).toBe("not-started");
   });
 
   it("releases a stale claim while preserving its missing-worktree location for reporting", async () => {

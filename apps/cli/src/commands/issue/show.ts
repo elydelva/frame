@@ -15,9 +15,9 @@ export async function runIssueShow(
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
   const id = IssueId.from(idRaw);
-  const issue = await container.repo.findIssue(id);
+  const issue = await container.frame.issues.get(id);
   if (!issue) fail(`Issue not found: "${idRaw}"`);
-  const traces = await container.repo.findTraces({ issueId: id });
+  const traces = await container.frame.traces.list({ issueId: id });
 
   getFormatter(opts.json ?? false).emit({
     json: { ...serializeIssue(issue), traces: traces.map(serializeTrace) },

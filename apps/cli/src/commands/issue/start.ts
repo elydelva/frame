@@ -17,8 +17,7 @@ export async function runIssueStart(
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
   const { actor, actorType, note } = resolveActor(opts);
-  const issue = await container.startIssue.execute({
-    id: IssueId.from(idRaw),
+  const issue = await container.frame.issues.start(IssueId.from(idRaw), {
     actor,
     actorType,
     ...(note ? { note } : {}),

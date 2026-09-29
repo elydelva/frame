@@ -1,4 +1,5 @@
 import { IssueId } from "@frame/core";
+import { FrameInputError } from "@frame/sdk";
 import type { Container } from "../../container.js";
 import { setJsonMode } from "../json-mode.js";
 import { getFormatter } from "../output.js";
@@ -9,20 +10,10 @@ function toGate(raw: string): IssueId | string {
   return raw.includes("/") ? raw : IssueId.from(raw);
 }
 
-async function applyGates(
-  container: Container,
-  idRaw: string,
-  gates: Array<IssueId | string>,
+function emitIssue(
+  issue: import("@frame/core").Issue,
   opts: ActorOptions & { json?: boolean }
-): Promise<void> {
-  const { actor, actorType, note } = resolveActor(opts);
-  const issue = await container.editIssue.execute({
-    id: IssueId.from(idRaw),
-    actor,
-    actorType,
-    ...(note ? { note } : {}),
-    gates,
-  });
+): void {
   getFormatter(opts.json ?? false).emit({
     json: serializeIssue(issue),
     human: () =>
@@ -37,11 +28,22 @@ export async function runIssueGateAdd(
   opts: ActorOptions & { json?: boolean }
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
-  const issue = await container.repo.findIssue(IssueId.from(idRaw));
+  const issue = await container.frame.issues.get(IssueId.from(idRaw));
   if (!issue) fail(`Issue not found: "${idRaw}"`);
   const current = issue.gates.map(String);
   if (current.includes(gateRaw)) fail(`Gate already present: ${gateRaw}`);
-  await applyGates(container, idRaw, [...issue.gates, toGate(gateRaw)], opts);
+  const { actor, actorType, note } = resolveActor(opts);
+  try {
+    const updated = await container.frame.issues.addGate(issue.id, toGate(gateRaw), {
+      actor,
+      actorType,
+      ...(note ? { note } : {}),
+    });
+    emitIssue(updated, opts);
+  } catch (error) {
+    if (error instanceof FrameInputError && error.code === "GATE_NOT_FOUND") fail(error.message);
+    throw error;
+  }
 }
 
 export async function runIssueGateRemove(
@@ -51,9 +53,19 @@ export async function runIssueGateRemove(
   opts: ActorOptions & { json?: boolean }
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
-  const issue = await container.repo.findIssue(IssueId.from(idRaw));
+  const issue = await container.frame.issues.get(IssueId.from(idRaw));
   if (!issue) fail(`Issue not found: "${idRaw}"`);
-  const kept = issue.gates.filter((g) => String(g) !== gateRaw);
-  if (kept.length === issue.gates.length) fail(`Gate not present: ${gateRaw}`);
-  await applyGates(container, idRaw, kept, opts);
+  const { actor, actorType, note } = resolveActor(opts);
+  try {
+    const updated = await container.frame.issues.removeGate(issue.id, toGate(gateRaw), {
+      actor,
+      actorType,
+      ...(note ? { note } : {}),
+    });
+    emitIssue(updated, opts);
+  } catch (error) {
+    if (error instanceof FrameInputError && error.code === "GATE_NOT_FOUND")
+      fail(`Gate not present: ${gateRaw}`);
+    throw error;
+  }
 }

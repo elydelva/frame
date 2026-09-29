@@ -28,13 +28,15 @@ export async function runIssueStatus(
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
   const { actor, actorType, note } = resolveActor(opts);
-  const issue = await container.setIssueStatus.execute({
-    id: IssueId.from(idRaw),
-    to: parseIssueStatus(statusRaw),
-    actor,
-    actorType,
-    ...(note ? { note } : {}),
-  });
+  const issue = await container.frame.issues.setStatus(
+    IssueId.from(idRaw),
+    parseIssueStatus(statusRaw),
+    {
+      actor,
+      actorType,
+      ...(note ? { note } : {}),
+    }
+  );
   getFormatter(opts.json ?? false).emit({
     json: serializeIssue(issue),
     human: () => console.log(`✓ ${issue.id.toString()} → ${issue.status}`),

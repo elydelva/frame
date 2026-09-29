@@ -1,4 +1,4 @@
-import { type Issue, type IssueStatus, ProjectId } from "@frame/core";
+import type { Issue, IssueStatus } from "@frame/core";
 import type { Container } from "../../container.js";
 import { setJsonMode } from "../json-mode.js";
 import { getFormatter } from "../output.js";
@@ -15,22 +15,17 @@ interface IssueListOptions {
   json?: boolean;
 }
 
-function matches(issue: Issue, opts: IssueListOptions): boolean {
-  if (opts.status && issue.status !== (opts.status as IssueStatus)) return false;
-  if (opts.assignee && issue.assignee !== opts.assignee) return false;
-  if (opts.branch && issue.branch !== opts.branch) return false;
-  if (opts.priority && issue.priority !== opts.priority) return false;
-  if (opts.milestone && issue.milestoneId?.toString() !== opts.milestone) return false;
-  if (opts.label && !issue.labels.includes(opts.label)) return false;
-  return true;
-}
-
 export async function runIssueList(container: Container, opts: IssueListOptions): Promise<void> {
   setJsonMode(opts.json ?? false);
-  const all = opts.project
-    ? await container.repo.findIssuesForProject(ProjectId.from(opts.project))
-    : await container.repo.findAllIssues();
-  const issues = all.filter((i) => matches(i, opts));
+  const issues = await container.frame.issues.list({
+    ...(opts.project ? { projectId: opts.project } : {}),
+    ...(opts.status ? { status: opts.status as IssueStatus } : {}),
+    ...(opts.assignee ? { assignee: opts.assignee } : {}),
+    ...(opts.branch ? { branch: opts.branch } : {}),
+    ...(opts.priority ? { priority: opts.priority as Issue["priority"] } : {}),
+    ...(opts.milestone ? { milestoneId: opts.milestone } : {}),
+    ...(opts.label ? { label: opts.label } : {}),
+  });
   const claimEntries = (await container.claims?.list()) ?? [];
   const claims = new Map(claimEntries.map((entry) => [entry.issueId, entry]));
 

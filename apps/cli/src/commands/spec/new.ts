@@ -18,7 +18,7 @@ export async function runSpecNew(container: Container, opts: SpecNewOptions): Pr
   const title = requireOption(opts.title, "--title");
 
   const { actor, actorType, note } = resolveActor(opts);
-  const spec = await container.createSpec.execute({
+  const spec = await container.frame.specs.create({
     projectId,
     title,
     author: actor,

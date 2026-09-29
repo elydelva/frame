@@ -197,9 +197,6 @@ export class MutationApi {
             `Gate ${String(parsedGate)} already exists on ${targetId}.`
           );
         }
-        if (parsedGate instanceof IssueId && !(await repository.findIssue(parsedGate))) {
-          throw new FrameInputError("GATE_NOT_FOUND", `Issue gate ${parsedGate} does not exist.`);
-        }
         return new EditIssueUseCase(repository).execute({
           id: targetId,
           gates: [...issue.gates, parsedGate],

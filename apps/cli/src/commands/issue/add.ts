@@ -38,7 +38,7 @@ export async function runIssueAdd(container: Container, opts: IssueAddOptions): 
   validateLabelsAgainstTaxonomy(labels, container.config);
 
   const { actor, actorType, note } = resolveActor(opts);
-  const issue = await container.createIssue.execute({
+  const issue = await container.frame.issues.create({
     projectId,
     title,
     author: actor,

@@ -1,4 +1,3 @@
-import { ProjectId } from "@frame/core";
 import type { Container } from "../../container.js";
 import { setJsonMode } from "../json-mode.js";
 import { getFormatter } from "../output.js";
@@ -11,9 +10,7 @@ interface SpecListOptions {
 
 export async function runSpecList(container: Container, opts: SpecListOptions): Promise<void> {
   setJsonMode(opts.json ?? false);
-  const specs = opts.project
-    ? await container.repo.findSpecsForProject(ProjectId.from(opts.project))
-    : await container.repo.findAllSpecs();
+  const specs = await container.frame.specs.list(opts.project ? { projectId: opts.project } : {});
 
   getFormatter(opts.json ?? false).emit({
     json: specs.map(serializeSpec),

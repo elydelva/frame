@@ -11,8 +11,7 @@ export async function runIssueRemove(
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
   const { actor, actorType, note } = resolveActor(opts);
-  const issue = await container.deleteIssue.execute({
-    id: IssueId.from(idRaw),
+  const issue = await container.frame.issues.delete(IssueId.from(idRaw), {
     actor,
     actorType,
     ...(note ? { note } : {}),

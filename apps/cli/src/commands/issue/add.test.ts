@@ -2,14 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import {
-  CreateIssueUseCase,
-  CreateProjectUseCase,
-  DEFAULT_CONFIG,
-  ProjectId,
-  type RealmConfig,
-} from "@frame/core";
+import { DEFAULT_CONFIG, type RealmConfig } from "@frame/core";
 import { FsRealmRepository } from "@frame/fs";
+import { Frame } from "@frame/sdk";
 import type { Container } from "../../container.js";
 import { runProjectNew } from "../project/new.js";
 import { runIssueAdd } from "./add.js";
@@ -22,10 +17,11 @@ function makeContainer(realmRoot: string, config: RealmConfig): Container {
   const repo = new FsRealmRepository(realmRoot);
   return {
     realmRoot,
+    repoRoot: realmRoot,
+    worktrees: null,
+    claims: null,
     config,
-    repo,
-    createProject: new CreateProjectUseCase(repo),
-    createIssue: new CreateIssueUseCase(repo),
+    frame: new Frame({ root: realmRoot, repository: repo, config }),
   } as unknown as Container;
 }
 
@@ -92,7 +88,7 @@ describe("runIssueAdd", () => {
     await runIssueAdd(container, { project: "PROJ-0001", title: "A" });
     restore();
 
-    const issues = await container.repo.findIssuesForProject(ProjectId.from("PROJ-0001"));
+    const issues = await container.frame.issues.list({ projectId: "PROJ-0001" });
     expect(issues[0]?.priority).toBe("P2");
   });
 
@@ -109,7 +105,7 @@ describe("runIssueAdd", () => {
     });
     restore();
 
-    const issues = await container.repo.findIssuesForProject(ProjectId.from("PROJ-0001"));
+    const issues = await container.frame.issues.list({ projectId: "PROJ-0001" });
     expect(issues[0]?.assignee).toBe("dave");
     expect(issues[0]?.branch).toBe("feat/a");
   });
@@ -126,7 +122,7 @@ describe("runIssueAdd", () => {
     await runIssueAdd(container, { project: "PROJ-0001", title: "A", estimate: "M" });
     restore();
 
-    const issues = await container.repo.findIssuesForProject(ProjectId.from("PROJ-0001"));
+    const issues = await container.frame.issues.list({ projectId: "PROJ-0001" });
     expect(issues[0]?.estimate).toBe(3);
   });
 
@@ -183,7 +179,7 @@ describe("runIssueAdd", () => {
     await runIssueAdd(container, { project: "PROJ-0001", title: "A", labels: "bug,feature" });
     restore();
 
-    const issues = await container.repo.findIssuesForProject(ProjectId.from("PROJ-0001"));
+    const issues = await container.frame.issues.list({ projectId: "PROJ-0001" });
     expect(issues[0]?.labels).toEqual(["bug", "feature"]);
   });
 
@@ -210,7 +206,7 @@ describe("runIssueAdd", () => {
     await runIssueAdd(container, { project: "PROJ-0001", title: "A", labels: "anything,goes" });
     restore();
 
-    const issues = await container.repo.findIssuesForProject(ProjectId.from("PROJ-0001"));
+    const issues = await container.frame.issues.list({ projectId: "PROJ-0001" });
     expect(issues[0]?.labels).toEqual(["anything", "goes"]);
   });
 });

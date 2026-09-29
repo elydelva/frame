@@ -3,24 +3,9 @@ import { spawnSync } from "node:child_process";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
-import {
-  CompleteIssueUseCase,
-  CreateIssueUseCase,
-  CreateMilestoneUseCase,
-  CreateProjectUseCase,
-  CreateSpecUseCase,
-  DEFAULT_CONFIG,
-  GetBriefUseCase,
-  GetContextUseCase,
-  GetHistoryUseCase,
-  GetNextUseCase,
-  ProjectId,
-  SetMilestoneStatusUseCase,
-  SetProjectStatusUseCase,
-  SetSpecStatusUseCase,
-  StartIssueUseCase,
-} from "@frame/core";
+import { DEFAULT_CONFIG, ProjectId } from "@frame/core";
 import { FRAME_DIR, FsRealmRepository, REALM_MANIFEST_FILE } from "@frame/fs";
+import { Frame } from "@frame/sdk";
 import type { Container } from "../container.js";
 import { createContainer } from "../container.js";
 import { runBrief } from "./brief.js";
@@ -29,7 +14,9 @@ import { runHistory } from "./history.js";
 import { runInit } from "./init.js";
 import { runIssueAdd } from "./issue/add.js";
 import { runIssueComplete } from "./issue/complete.js";
+import { runIssueGateAdd, runIssueGateRemove } from "./issue/gate.js";
 import { runIssueList } from "./issue/list.js";
+import { runIssueShow } from "./issue/show.js";
 import { runIssueStart } from "./issue/start.js";
 import { setJsonMode } from "./json-mode.js";
 import { runLint } from "./lint.js";
@@ -55,20 +42,7 @@ function testContainer(realmRoot: string): Container {
     worktrees: null,
     claims: null,
     config: DEFAULT_CONFIG,
-    repo,
-    createProject: new CreateProjectUseCase(repo),
-    createMilestone: new CreateMilestoneUseCase(repo),
-    createIssue: new CreateIssueUseCase(repo),
-    startIssue: new StartIssueUseCase(repo),
-    completeIssue: new CompleteIssueUseCase(repo),
-    createSpec: new CreateSpecUseCase(repo),
-    setSpecStatus: new SetSpecStatusUseCase(repo),
-    setProjectStatus: new SetProjectStatusUseCase(repo),
-    setMilestoneStatus: new SetMilestoneStatusUseCase(repo),
-    getNext: new GetNextUseCase(repo),
-    getContext: new GetContextUseCase(repo),
-    getHistory: new GetHistoryUseCase(repo),
-    getBrief: new GetBriefUseCase(repo),
+    frame: new Frame({ root: realmRoot, repository: repo, config: DEFAULT_CONFIG }),
   };
 }
 
@@ -235,15 +209,15 @@ describe("frame CLI commands", () => {
     if (initialized.status !== 0) throw new Error("git init failed");
     await runInit(tempDir);
     const container = await createContainer(tempDir);
-    const project = await container.createProject.execute({
+    const project = await container.frame.projects.create({
       title: "Claims",
       author: "test",
       actor: "test",
       leads: [],
       body: "",
     });
-    await container.setProjectStatus.execute({ id: project.id, to: "active", actor: "test" });
-    const first = await container.createIssue.execute({
+    await container.frame.projects.setStatus(project.id, "active", { actor: "test" });
+    const first = await container.frame.issues.create({
       projectId: project.id,
       title: "Claimed first",
       author: "test",
@@ -253,7 +227,7 @@ describe("frame CLI commands", () => {
       gates: [],
       body: "",
     });
-    await container.createIssue.execute({
+    await container.frame.issues.create({
       projectId: project.id,
       title: "Available second",
       author: "test",
@@ -375,9 +349,9 @@ describe("frame CLI commands", () => {
     });
 
     // `next` only surfaces issues under active projects.
-    const project = await container.repo.findProject(ProjectId.from("PROJ-0001"));
+    const project = await container.frame.projects.get(ProjectId.from("PROJ-0001"));
     if (!project) throw new Error("project missing");
-    await container.repo.saveProject({ ...project, status: "active" });
+    await container.frame.projects.setStatus(project.id, "active", { actor: "test" });
 
     const cap = captureLog();
     await runNext(container, {});
@@ -518,9 +492,9 @@ describe("frame CLI commands", () => {
       title: "Fix auth redirect",
       priority: "high",
     });
-    const project = await container.repo.findProject(ProjectId.from("PROJ-0001"));
+    const project = await container.frame.projects.get(ProjectId.from("PROJ-0001"));
     if (!project) throw new Error("project missing");
-    await container.repo.saveProject({ ...project, status: "active" });
+    await container.frame.projects.setStatus(project.id, "active", { actor: "test" });
 
     const cap = captureLog();
     await runNext(container, { json: true });
@@ -668,7 +642,7 @@ describe("frame CLI commands", () => {
     const container = testContainer(tempDir);
     await runProjectNew(container, { title: "Checkout revamp" });
     // Issue with a rule, created via the use case directly to attach rules.
-    await container.createIssue.execute({
+    await container.frame.issues.create({
       projectId: ProjectId.from("PROJ-0001"),
       title: "Guarded",
       author: "a",
@@ -756,6 +730,97 @@ describe("frame CLI commands", () => {
     } finally {
       process.exit = originalExit;
       setJsonMode(false);
+    }
+  });
+
+  it("issueListMatchesSdkFilters", async () => {
+    await runInit(tempDir);
+    const container = testContainer(tempDir);
+    await runProjectNew(container, { title: "SDK list" });
+    await runIssueAdd(container, {
+      project: "PROJ-0001",
+      title: "API work",
+      labels: "api",
+      branch: "feature/api",
+    });
+    await runIssueAdd(container, {
+      project: "PROJ-0001",
+      title: "UI work",
+      labels: "ui",
+      branch: "feature/ui",
+    });
+    const cap = captureLog();
+    await runIssueList(container, { label: "api", branch: "feature/api", json: true });
+    const rows = JSON.parse(cap.lines.join(" ")) as Array<{ title: string }>;
+    cap.restore();
+    expect(rows.map((row) => row.title)).toEqual(["API work"]);
+    expect((container as unknown as { frame?: unknown }).frame).toBeDefined();
+  });
+
+  it("issueShowIncludesSdkTraces", async () => {
+    await runInit(tempDir);
+    const container = testContainer(tempDir);
+    await runProjectNew(container, { title: "SDK show" });
+    await runIssueAdd(container, { project: "PROJ-0001", title: "Trace me" });
+    await runIssueStart(container, "ISSUE-0001");
+    const cap = captureLog();
+    await runIssueShow(container, "ISSUE-0001", { json: true });
+    const shown = JSON.parse(cap.lines.join(" ")) as { traces: Array<{ event: string }> };
+    cap.restore();
+    expect(shown.traces.some((trace) => trace.event === "issue_started")).toBe(true);
+    expect((container as unknown as { frame?: unknown }).frame).toBeDefined();
+  });
+
+  it("gateCommandsMatchSdkMutations", async () => {
+    await runInit(tempDir);
+    const container = testContainer(tempDir);
+    await runProjectNew(container, { title: "SDK gates" });
+    await runIssueAdd(container, { project: "PROJ-0001", title: "First" });
+    await runIssueAdd(container, { project: "PROJ-0001", title: "Second" });
+    await runIssueGateAdd(container, "ISSUE-0002", "ISSUE-0001", {});
+    const cap = captureLog();
+    await runIssueGateRemove(container, "ISSUE-0002", "ISSUE-0001", { json: true });
+    const result = JSON.parse(cap.lines.join(" ")) as { gates: string[] };
+    cap.restore();
+    expect(result.gates).toEqual([]);
+    expect((container as unknown as { frame?: unknown }).frame).toBeDefined();
+  });
+
+  it("lintJsonReportsRawParseDiagnostic", async () => {
+    await runInit(tempDir);
+    const container = testContainer(tempDir);
+    await runProjectNew(container, { title: "Malformed" });
+    const malformedFile = path.join(
+      tempDir,
+      FRAME_DIR,
+      "projects",
+      "PROJ-0001",
+      "issues",
+      "ISSUE-9999-broken.md"
+    );
+    await fs.mkdir(path.dirname(malformedFile), { recursive: true });
+    await fs.writeFile(malformedFile, "---\nid: [\n---\n", "utf8");
+    const originalExit = process.exit;
+    // @ts-expect-error test stub that throws to short-circuit `never`.
+    process.exit = () => {
+      throw new Error("exit");
+    };
+    const cap = captureLog();
+    try {
+      await expect(runLint(container, { json: true })).rejects.toThrow("exit");
+      const report = JSON.parse(cap.lines.join(" ")) as {
+        findings: Array<{ code: string; file: string; severity: string }>;
+      };
+      expect(report.findings).toContainEqual(
+        expect.objectContaining({
+          code: "frontmatter-valid",
+          file: ".frame/projects/PROJ-0001/issues/ISSUE-9999-broken.md",
+          severity: "error",
+        })
+      );
+    } finally {
+      cap.restore();
+      process.exit = originalExit;
     }
   });
 

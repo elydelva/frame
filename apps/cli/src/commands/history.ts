@@ -41,7 +41,7 @@ export async function runHistory(container: Container, opts: HistoryOptions): Pr
     filter.since = d;
   }
 
-  const traces = await container.getHistory.execute(filter);
+  const traces = await container.frame.history(filter);
 
   getFormatter(opts.json ?? false).emit({
     json: traces.map(serializeTrace),

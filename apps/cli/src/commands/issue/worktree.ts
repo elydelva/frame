@@ -1,6 +1,6 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { DAGService, IssueId } from "@frame/core";
+import { IssueId } from "@frame/core";
 import type { Container } from "../../container.js";
 import { assertRealmCompatible } from "../../format-compatibility.js";
 import type { WorktreeClaim } from "../../worktrees/types.js";
@@ -33,18 +33,9 @@ export async function runIssueWorktree(
   }
   await assertRealmCompatible(container.realmRoot);
   const id = IssueId.from(idRaw);
-  const issue = await container.repo.findIssue(id);
+  const issue = await container.frame.issues.get(id);
   if (!issue) throw new Error(`Issue ${idRaw} was not found`);
-  const [issues, projects, milestones] = await Promise.all([
-    container.repo.findAllIssues(),
-    container.repo.findAllProjects(),
-    container.repo.findAllMilestones(),
-  ]);
-  if (
-    !new DAGService()
-      .getEligibleIssues(issues, projects, milestones)
-      .some((item) => item.id.equals(id))
-  ) {
+  if (!(await container.frame.issues.isEligibleToStart(id))) {
     throw new Error(`Issue ${idRaw} is not eligible to start`);
   }
 
@@ -66,8 +57,7 @@ export async function runIssueWorktree(
     await container.worktrees.add({ path: targetPath, branch, base });
     created = true;
     const startedContainer = await createContainerAt(targetPath);
-    const started = await startedContainer.startIssue.execute({
-      id,
+    const started = await startedContainer.frame.issues.start(id, {
       actor,
       actorType,
       assignee: opts.assignee ?? actor,

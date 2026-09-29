@@ -1,26 +1,8 @@
-import {
-  CompleteIssueUseCase,
-  CreateIssueUseCase,
-  CreateMilestoneUseCase,
-  CreateProjectUseCase,
-  CreateSpecUseCase,
-  DeleteIssueUseCase,
-  EditIssueUseCase,
-  GetBriefUseCase,
-  GetContextUseCase,
-  GetHistoryUseCase,
-  GetNextUseCase,
-  type IRealmRepository,
-  type RealmConfig,
-  SetIssueStatusUseCase,
-  SetMilestoneStatusUseCase,
-  SetProjectStatusUseCase,
-  SetSpecStatusUseCase,
-  StartIssueUseCase,
-} from "@frame/core";
+import type { RealmConfig } from "@frame/core";
 import { FsRealmRepository, readRealmConfig } from "@frame/fs";
 import { GitAdapter } from "@frame/git";
 import { GitWorktreeAdapter } from "@frame/git";
+import { Frame } from "@frame/sdk";
 import { assertRealmCompatible } from "./format-compatibility.js";
 import { WorktreeClaimStore } from "./worktrees/claim-store.js";
 
@@ -30,23 +12,7 @@ export interface Container {
   worktrees: GitWorktreeAdapter | null;
   claims: WorktreeClaimStore | null;
   config: RealmConfig;
-  repo: IRealmRepository;
-  createProject: CreateProjectUseCase;
-  createMilestone: CreateMilestoneUseCase;
-  createIssue: CreateIssueUseCase;
-  startIssue: StartIssueUseCase;
-  completeIssue: CompleteIssueUseCase;
-  editIssue: EditIssueUseCase;
-  setIssueStatus: SetIssueStatusUseCase;
-  deleteIssue: DeleteIssueUseCase;
-  createSpec: CreateSpecUseCase;
-  setSpecStatus: SetSpecStatusUseCase;
-  setProjectStatus: SetProjectStatusUseCase;
-  setMilestoneStatus: SetMilestoneStatusUseCase;
-  getNext: GetNextUseCase;
-  getContext: GetContextUseCase;
-  getHistory: GetHistoryUseCase;
-  getBrief: GetBriefUseCase;
+  frame: Frame;
 }
 
 export async function createContainer(realmRoot: string): Promise<Container> {
@@ -55,7 +21,7 @@ export async function createContainer(realmRoot: string): Promise<Container> {
   // Git runs in the realm root so staging works when FRAME_ROOT points
   // outside the current working directory. Staging is performed by the
   // repository (best-effort) using absolute, realm-rooted paths; the use-cases
-  // are deliberately git-less to avoid double-staging.
+  // are staged best-effort by the adapter exactly once.
   const git = new GitAdapter(realmRoot);
   const invocationRoot = process.env.FRAME_ROOT ? process.cwd() : realmRoot;
   const worktrees = new GitWorktreeAdapter(invocationRoot);
@@ -76,22 +42,6 @@ export async function createContainer(realmRoot: string): Promise<Container> {
     worktrees: claims ? worktrees : null,
     claims,
     config,
-    repo,
-    createProject: new CreateProjectUseCase(repo),
-    createMilestone: new CreateMilestoneUseCase(repo),
-    createIssue: new CreateIssueUseCase(repo),
-    startIssue: new StartIssueUseCase(repo),
-    completeIssue: new CompleteIssueUseCase(repo),
-    editIssue: new EditIssueUseCase(repo),
-    setIssueStatus: new SetIssueStatusUseCase(repo),
-    deleteIssue: new DeleteIssueUseCase(repo),
-    createSpec: new CreateSpecUseCase(repo),
-    setSpecStatus: new SetSpecStatusUseCase(repo),
-    setProjectStatus: new SetProjectStatusUseCase(repo),
-    setMilestoneStatus: new SetMilestoneStatusUseCase(repo),
-    getNext: new GetNextUseCase(repo, config),
-    getContext: new GetContextUseCase(repo),
-    getHistory: new GetHistoryUseCase(repo),
-    getBrief: new GetBriefUseCase(repo, config),
+    frame: new Frame({ root: realmRoot, repository: repo, config }),
   };
 }

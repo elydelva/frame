@@ -10,7 +10,7 @@ interface NextOptions {
 export async function runNext(container: Container, opts: NextOptions): Promise<void> {
   setJsonMode(opts.json ?? false);
   const claimEntries = (await container.claims?.list()) ?? [];
-  const result = await container.getNext.execute({
+  const result = await container.frame.next({
     excludedIssueIds: new Set(claimEntries.map((entry) => entry.issueId)),
   });
   const claimErrors = claimEntries.flatMap((entry) =>

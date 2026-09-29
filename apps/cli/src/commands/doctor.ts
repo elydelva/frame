@@ -63,7 +63,7 @@ export async function runDoctor(container: Container, opts: DoctorOptions): Prom
     }
   }
 
-  const report = new LintEngine(container.config).run(scan);
+  const report = new LintEngine(await container.frame.config.get()).run(scan);
 
   getFormatter(opts.json ?? false).emit({
     json: { repairs, fixed: opts.fix === true, lint: report },

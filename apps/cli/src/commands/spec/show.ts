@@ -15,9 +15,9 @@ export async function runSpecShow(
 ): Promise<void> {
   setJsonMode(opts.json ?? false);
   const id = SpecId.from(idRaw);
-  const spec = await container.repo.findSpec(id);
+  const spec = await container.frame.specs.get(id);
   if (!spec) fail(`Spec not found: "${idRaw}"`);
-  const traces = await container.repo.findTraces({ specId: id });
+  const traces = await container.frame.traces.list({ specId: id });
 
   getFormatter(opts.json ?? false).emit({
     json: { ...serializeSpec(spec), traces: traces.map(serializeTrace) },

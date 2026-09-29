@@ -16,7 +16,7 @@ export async function runProjectNew(container: Container, opts: ProjectNewOption
   const title = requireOption(opts.title, "--title");
 
   const { actor, actorType, note } = resolveActor(opts);
-  const project = await container.createProject.execute({
+  const project = await container.frame.projects.create({
     title,
     author: actor,
     actor,

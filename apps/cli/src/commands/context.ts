@@ -16,7 +16,7 @@ export async function runContext(container: Container, opts: ContextOptions): Pr
   if (opts.project) filter.projectId = ProjectId.from(opts.project);
   if (opts.active) filter.activeOnly = true;
 
-  const ctx = await container.getContext.execute(filter);
+  const ctx = await container.frame.context(filter);
 
   getFormatter(opts.json ?? false).emit({
     json: serializeContext(ctx),

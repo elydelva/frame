@@ -33,7 +33,7 @@ export async function runMilestoneNew(
   }
 
   const { actor, actorType, note } = resolveActor(opts);
-  const milestone = await container.createMilestone.execute({
+  const milestone = await container.frame.milestones.create({
     projectId,
     title,
     order,

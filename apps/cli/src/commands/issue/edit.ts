@@ -71,8 +71,7 @@ export async function runIssueEdit(
   const { actor, actorType, note } = resolveActor(opts);
   const patch = buildPatch(container, opts);
 
-  const issue = await container.editIssue.execute({
-    id: IssueId.from(idRaw),
+  const issue = await container.frame.issues.edit(IssueId.from(idRaw), {
     actor,
     actorType,
     ...(note ? { note } : {}),

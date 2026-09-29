@@ -28,13 +28,15 @@ export async function runProjectStatus(
   }
 
   const { actor, actorType, note } = resolveActor(opts);
-  const project = await container.setProjectStatus.execute({
-    id: ProjectId.from(idRaw),
-    to: statusRaw as ProjectStatus,
-    actor,
-    actorType,
-    ...(note ? { note } : {}),
-  });
+  const project = await container.frame.projects.setStatus(
+    ProjectId.from(idRaw),
+    statusRaw as ProjectStatus,
+    {
+      actor,
+      actorType,
+      ...(note ? { note } : {}),
+    }
+  );
 
   getFormatter(opts.json ?? false).emit({
     json: serializeProject(project),

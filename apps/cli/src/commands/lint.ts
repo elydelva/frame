@@ -19,7 +19,7 @@ export async function runLint(container: Container, opts: LintOptions): Promise<
   setJsonMode(opts.json ?? false);
 
   const scan = await scanRealmRaw(container.realmRoot);
-  const report = new LintEngine(container.config).run(scan);
+  const report = new LintEngine(await container.frame.config.get()).run(scan);
 
   getFormatter(opts.json ?? false).emit({
     json: report,

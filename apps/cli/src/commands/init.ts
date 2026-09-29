@@ -1,6 +1,5 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { DEFAULT_CONFIG } from "@frame/core";
 import {
   CONFIG_FILE,
   FRAME_DIR,
@@ -8,92 +7,11 @@ import {
   REALM_MANIFEST_FILE,
   STATE_FILE,
   TEMPLATES_DIR,
-  readRealmFormat,
-  writeRealmConfig,
-  writeRealmFormat,
 } from "@frame/fs";
 import { GitCommandError, GitWorktreeAdapter } from "@frame/git";
+import { Frame } from "@frame/sdk";
 
-const PROJECT_TEMPLATE = `---
-id: "{{id}}"
-title: "{{title}}"
-status: planned
-leads: []
-author: "{{author}}"
----
-
-# {{title}}
-
-## Overview
-
-<!-- What is this project about? -->
-`;
-
-const MILESTONE_TEMPLATE = `---
-id: "{{id}}"
-projectId: "{{projectId}}"
-title: "{{title}}"
-status: pending
-order: 0
-targetDate: ~
----
-
-# {{title}}
-
-<!-- Milestone scope and exit criteria -->
-`;
-
-const ISSUE_TEMPLATE = `---
-id: "{{id}}"
-projectId: "{{projectId}}"
-milestoneId: ~
-title: "{{title}}"
-status: not-started
-priority: none
-estimate: ~
-labels: []
-parentId: ~
-gates: []
-rules: []
-assignee: ~
-branch: ~
-author: "{{author}}"
----
-
-<!-- Issue description -->
-`;
-
-const SPEC_TEMPLATE = `---
-id: "{{id}}"
-projectId: "{{projectId}}"
-title: "{{title}}"
-status: draft
-tags: []
-rules: []
-author: "{{author}}"
----
-
-# {{title}}
-
-## Context
-
-<!-- Why does this decision need to be made? -->
-
-## Decision
-
-<!-- What was decided? -->
-
-## Consequences
-
-<!-- What are the trade-offs? -->
-`;
-
-const TEMPLATES: Array<[string, string]> = [
-  ["project", PROJECT_TEMPLATE],
-  ["milestone", MILESTONE_TEMPLATE],
-  ["issue", ISSUE_TEMPLATE],
-  ["spec", SPEC_TEMPLATE],
-];
+const TEMPLATE_NAMES = ["project", "milestone", "issue", "spec"];
 
 const AGENTS_MD = `# Agent guide — frame (\`frame\`)
 
@@ -171,43 +89,12 @@ async function exists(p: string): Promise<boolean> {
 }
 
 export async function runInit(realmRoot: string): Promise<void> {
-  // Validate before creating or updating any realm files. A missing manifest is
-  // legacy format 1 and is materialized below; an incompatible one fails closed.
-  await readRealmFormat(realmRoot);
-  await addWorktreeExclude(realmRoot);
-
-  const frameDir = path.join(realmRoot, FRAME_DIR);
-  const templatesDir = path.join(frameDir, TEMPLATES_DIR);
-
-  await fs.mkdir(frameDir, { recursive: true });
-  await fs.mkdir(templatesDir, { recursive: true });
-
-  const manifestPath = path.join(frameDir, REALM_MANIFEST_FILE);
-  if (!(await exists(manifestPath))) {
-    await writeRealmFormat(realmRoot);
-  }
-
-  const stateFile = path.join(frameDir, STATE_FILE);
-  if (!(await exists(stateFile))) {
-    await fs.writeFile(
-      stateFile,
-      JSON.stringify({ project: 0, milestone: 0, issue: 0, spec: 0 }, null, 2),
-      "utf-8"
-    );
-  }
-
-  for (const [name, body] of TEMPLATES) {
-    const file = path.join(templatesDir, `${name}${MD_EXT}`);
-    if (!(await exists(file))) {
-      await fs.writeFile(file, body, "utf-8");
-    }
-  }
-
   const configPath = path.join(realmRoot, CONFIG_FILE);
-  if (await exists(configPath)) {
+  const configExisted = await exists(configPath);
+  await Frame.initialize({ root: realmRoot });
+  await addWorktreeExclude(realmRoot);
+  if (configExisted) {
     console.log(`✓ ${CONFIG_FILE} already exists, skipping`);
-  } else {
-    await writeRealmConfig(realmRoot, DEFAULT_CONFIG);
   }
 
   await writeAgentsGuide(realmRoot);
@@ -216,7 +103,7 @@ export async function runInit(realmRoot: string): Promise<void> {
   console.log(`✓ Initialized ${FRAME_DIR}/`);
   console.log(`  ${FRAME_DIR}/${REALM_MANIFEST_FILE}`);
   console.log(`  ${FRAME_DIR}/${STATE_FILE}`);
-  for (const [name] of TEMPLATES) {
+  for (const name of TEMPLATE_NAMES) {
     console.log(`  ${FRAME_DIR}/${TEMPLATES_DIR}/${name}${MD_EXT}`);
   }
   console.log(`  ${CONFIG_FILE}`);
