@@ -157,7 +157,7 @@ Frame currently stores project data in Git. Linear and GitHub Issues synchroniza
 ## Install
 
 ```bash
-npm install -g frame
+brew install elydelva/tap/frame
 ```
 
 ```bash
